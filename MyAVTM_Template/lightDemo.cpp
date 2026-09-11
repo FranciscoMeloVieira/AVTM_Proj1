@@ -31,6 +31,7 @@
 #include "mathUtility.h"
 #include "model.h"
 #include "texture.h"
+#include <ScenegraphNode.h>
 
 using namespace std;
 
@@ -72,6 +73,10 @@ bool spotlight_mode = false;
 float coneDir[4] = { 0.0f, -0.0f, -1.0f, 0.0f };
 
 bool fontLoaded = false;
+
+// Global scene graph
+static EmptyNode* sceneRoot = nullptr;
+
 
 /// ::::::::::::::::::::::::::::::::::::::::::::::::CALLBACK FUNCIONS:::::::::::::::::::::::::::::::::::::::::::::::::://///
 
@@ -118,6 +123,11 @@ void changeSize(int w, int h) {
 // Render stufff
 //
 
+
+
+// ============================================================================
+// Render the scene and UI
+// ============================================================================
 void renderSim(void) {
 
 	FrameCount++;
@@ -138,71 +148,23 @@ void renderSim(void) {
 	mu.lookAt(camX, camY, camZ, 0, 0, 0, 0, 1, 0);
 
 	//send the light position in eye coordinates
-	renderer.setLightPos(lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
-
-	//float lposAux[4];
-	//mu.multMatrixPoint(gmu::VIEW, lightPos, lposAux);   //lightPos definido em World Coord so is converted to eye space
-	//renderer.setLightPos(lposAux);
+	renderer.setLightPos(lightPos);
 
 	//Spotlight settings
 	renderer.setSpotLightMode(spotlight_mode);
 	renderer.setSpotParam(coneDir, 0.93);
 
-	dataMesh data;
-	
-	// Draw the floor - myMeshes[0] contains the cube object
-	mu.pushMatrix(gmu::MODEL);
-	mu.translate(gmu::MODEL, 0.0f, -1.15f, 0.0f);
-	mu.scale(gmu::MODEL, 30.0f, 0.1f, 30.0f);
-	mu.translate(gmu::MODEL, -0.5f, -0.5f, -0.5f); //centrar o cubo na origem
+	// ===== RENDER SCENEGRAPH =====
+	sceneRoot->draw();
 
-	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-	mu.computeNormalMatrix3x3();
-
-	data.meshID = 0;
-	data.texMode = 1; //modulate diffuse color with texel color
-	data.vm = mu.get(gmu::VIEW_MODEL),
-	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
-	data.normal = mu.getNormalMatrix();
-	renderer.renderMesh(data);
-	mu.popMatrix(gmu::MODEL);
-
-	//Draw the other objects
-	int objId = 0; //id of the current object mesh - to be used as index of the array Mymeshes in the renderer object
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			mu.pushMatrix(gmu::MODEL);
-			mu.translate(gmu::MODEL, (float)i * 3.7f, 0.0f, (float)j * 3.7f);
-
-			mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-			mu.computeNormalMatrix3x3();
-
-			data.meshID = objId;
-			data.texMode = i;   //0:no texturing; 1:modulate diffuse color with texel color; 2:diffuse color is replaced by texel color; 3: multitexturing
-			data.vm = mu.get(gmu::VIEW_MODEL),
-			data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
-			data.normal = mu.getNormalMatrix();
-			renderer.renderMesh(data);
-
-			mu.popMatrix(gmu::MODEL);
-			objId = (objId + 1) % 6;
-		}
-	}
-
-	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
-	//Each glyph quad texture needs just one byte color channel: 0 in background and 1 for the actual character pixels. Use it for alpha blending
-	//text to be rendered in last place to be in front of everything
-	
-	if(fontLoaded) {
+	// ===== RENDER TEXT =====
+	if (fontLoaded) {
 		glDisable(GL_DEPTH_TEST);
 		TextCommand textCmd = { "AVTM 2026 Welcome:\nGood Luck!", {100, 100}, 0.5 };
-		//the glyph contains transparent background colors and non-transparent for the actual character pixels. So we use the blending
-		glEnable(GL_BLEND);  
+		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		int m_viewport[4];
 		glGetIntegerv(GL_VIEWPORT, m_viewport);
-
-		//viewer at origin looking down at  negative z direction
 
 		mu.loadIdentity(gmu::MODEL);
 		mu.loadIdentity(gmu::VIEW);
@@ -215,9 +177,8 @@ void renderSim(void) {
 		mu.popMatrix(gmu::PROJECTION);
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
-		
 	}
-	
+
 	glutSwapBuffers();
 }
 
@@ -358,6 +319,38 @@ void mouseWheel(int wheel, int direction, int x, int y) {
 // Scene building with basic geometry
 //
 
+// ============================================================================
+// Build the scene graph
+// ============================================================================
+void buildSceneGraph() {
+	if (sceneRoot != nullptr) return;  // Already built
+
+	// Create root node (empty, just a container)
+	sceneRoot = new EmptyNode();
+
+	// Create and add floor
+	MeshNode* floor = new MeshNode(0, 1);  // meshID=0, texMode=1
+	floor->setAbsolutePosition(0.0f, -1.15f, 0.0f);
+	floor->setScale(30.0f, 0.1f, 30.0f);
+	floor->translate(-0.5f, -0.5f, -0.5f);  // Center cube at origin
+	sceneRoot->addChild(floor);
+
+	// Create and add 4x4 grid of objects
+	int objId = 0;
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			MeshNode* obj = new MeshNode(objId, i);  // texMode = i
+			obj->setAbsolutePosition((float)i * 3.7f, 0.0f, (float)j * 3.7f);
+			sceneRoot->addChild(obj);
+			objId = (objId + 1) % 6;
+		}
+	}
+}
+
+//
+// Build the scene with meshes and textures
+//
+
 void buildScene()
 {
 	//Texture Object definition
@@ -441,6 +434,8 @@ void buildScene()
 	amesh.mat.texCount = texcount;
 	renderer.myMeshes.push_back(amesh);
 
+	buildSceneGraph();
+
 	//The truetypeInit creates a texture object in TexObjArray for storing the fontAtlasTexture
 	
 	fontLoaded = renderer.truetypeInit(fontPathFile);
@@ -455,6 +450,8 @@ void buildScene()
 	camX = r * sin(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 	camY = r * sin(_beta * 3.14f / 180.0f);
+
+
 }
 
 // ------------------------------------------------------------
@@ -528,6 +525,8 @@ int main(int argc, char **argv) {
 
 	return(0);
 }
+
+
 
 
 

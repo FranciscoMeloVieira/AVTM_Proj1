@@ -159,6 +159,7 @@
     <ClInclude Include="mathUtility.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="renderer.h" />
+    <ClInclude Include="ScenegraphNode.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_rect_pack.h" />
     <ClInclude Include="stb_truetype.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />
     <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="ScenegraphNode.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="texture.cpp" />
   </ItemGroup>
