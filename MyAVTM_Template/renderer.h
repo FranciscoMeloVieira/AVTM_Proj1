@@ -60,7 +60,7 @@ public:
 
   void setTexUnit(int tuId, int texObjArray_pos);
 
-
+  void renderMeshInstanced(const dataMesh& data, GLsizei instanceCount);
 
   //Vector with meshes
   std::vector<struct MyMesh> myMeshes;

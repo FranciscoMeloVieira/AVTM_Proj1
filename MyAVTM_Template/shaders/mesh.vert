@@ -10,6 +10,7 @@ uniform vec4 l_pos;
 in vec4 position;
 in vec4 normal;    //por causa do gerador de geometria
 in vec4 texCoord;
+layout (location = 3) in vec3 instancePos;
 
 out Data {
 	vec3 normal;
@@ -20,12 +21,13 @@ out Data {
 
 void main () {
 
-	vec4 pos = m_viewModel * position;
+	vec4 instancePosition = position + vec4(instancePos, 0.0);
+	vec4 pos = m_viewModel * instancePosition;
 
 	DataOut.normal = normalize(m_normal * normal.xyz);
 	DataOut.lightDir = vec3(l_pos - pos);
 	DataOut.eye = vec3(-pos);
 	DataOut.tex_coord = texCoord.st;
 
-	gl_Position = m_pvm * position;	
+	gl_Position = m_pvm * instancePosition;	
 }

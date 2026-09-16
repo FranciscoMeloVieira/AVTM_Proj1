@@ -91,3 +91,27 @@ void MeshNode::draw() {
 
 	mu.popMatrix(gmu::MODEL);
 }
+
+void ScenegraphNode::setTransform(
+	float px, float py, float pz,
+	float rx, float ry, float rz,
+	float sx, float sy, float sz)
+{
+	mu.pushMatrix(gmu::MODEL);
+
+	mu.loadIdentity(gmu::MODEL);
+
+	mu.translate(gmu::MODEL, px, py, pz);
+
+	mu.rotate(gmu::MODEL, rx, 1, 0, 0);
+	mu.rotate(gmu::MODEL, ry, 0, 1, 0);
+	mu.rotate(gmu::MODEL, rz, 0, 0, 1);
+
+	mu.scale(gmu::MODEL, sx, sy, sz);
+
+	memcpy(localTransform,
+		mu.get(gmu::MODEL),
+		16 * sizeof(float));
+
+	mu.popMatrix(gmu::MODEL);
+}

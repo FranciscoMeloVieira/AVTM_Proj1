@@ -23,6 +23,11 @@ public:
 	void setRotation(float angle, const float x, const float y, const float z);
 	void setScale(const float scaleX, const float scaleY, const float scaleZ);
 	void setTransform(const float* matrix);
+	/*TODO - test*/
+	void ScenegraphNode::setTransform(
+		float px, float py, float pz,
+		float rx, float ry, float rz,
+		float sx, float sy, float sz);
 
 	void translate(const float deltaX, const float deltaY, const float deltaZ);
 
@@ -40,7 +45,6 @@ protected:
 	ScenegraphNode* parent = nullptr;
 
 	bool isVisible = true;
-
 };
 
 class EmptyNode : public ScenegraphNode {

@@ -155,9 +155,11 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Car.hpp" />
     <ClInclude Include="cube.h" />
     <ClInclude Include="mathUtility.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="OrangeManager.hpp" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="ScenegraphNode.h" />
     <ClInclude Include="shader.h" />
@@ -167,8 +169,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basic_geometry.cpp" />
+    <ClCompile Include="Car.cpp" />
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />
+    <ClCompile Include="OrangeManager.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="ScenegraphNode.cpp" />
     <ClCompile Include="shader.cpp" />

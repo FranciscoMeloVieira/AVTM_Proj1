@@ -33,6 +33,10 @@
 #include "texture.h"
 #include <ScenegraphNode.h>
 
+/*TODO*/
+#include "Car.hpp"
+#include "OrangeManager.hpp"
+
 using namespace std;
 
 #define CAPTION "AVTM 2026 Welcome Demo"
@@ -40,6 +44,10 @@ int WindowHandle = 0;
 int WinX = 640, WinY = 480;
 
 unsigned int FrameCount = 0;
+
+/*TODO - make better pls*/
+CarNode* carnode = nullptr;
+OrangesManager* orangesManager = nullptr;
 
 //File with the font
 const string fontPathFile = "fonts/arial.ttf";
@@ -130,6 +138,13 @@ void changeSize(int w, int h) {
 // ============================================================================
 void renderSim(void) {
 
+	static int lastTime = glutGet(GLUT_ELAPSED_TIME);
+	int currentTime = glutGet(GLUT_ELAPSED_TIME);
+	float deltaTime = (currentTime - lastTime) / 1000.0f;
+	/*TODO - I don't know how to get elapsed time xd*/
+	carnode->update(0.1);
+	orangesManager->update(0.1);
+
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -187,6 +202,22 @@ void renderSim(void) {
 // Events from the Keyboard
 //
 
+void processKeysUp(unsigned char key, int xx, int yy)
+{
+	switch (key) {
+	case 'a':
+	case 'd':
+		carnode->steering = 0.0f;
+		break;
+	case 'w':
+		carnode->isAccelerating = false;
+		break;
+	case 's':
+		carnode->isDecelerating = false;
+		break;
+	}
+}
+
 void processKeys(unsigned char key, int xx, int yy)
 {
 	switch(key) {
@@ -220,6 +251,19 @@ void processKeys(unsigned char key, int xx, int yy)
 
 		case 'm': glEnable(GL_MULTISAMPLE); break;
 		case 'n': glDisable(GL_MULTISAMPLE); break;
+
+		case 'w':
+			carnode->isAccelerating = true;
+			break;
+		case 's':
+			carnode->isDecelerating = true;
+			break;
+		case 'a':
+			carnode->steering = 1.0f;
+			break;
+		case 'd':
+			carnode->steering = -1.0f;
+			break;
 	}
 }
 
@@ -330,21 +374,26 @@ void buildSceneGraph() {
 
 	// Create and add floor
 	MeshNode* floor = new MeshNode(0, 1);  // meshID=0, texMode=1
-	floor->setAbsolutePosition(0.0f, -1.15f, 0.0f);
+	floor->setAbsolutePosition(0.0f, 0.0f, 0.0f);
 	floor->setScale(30.0f, 0.1f, 30.0f);
-	floor->translate(-0.5f, -0.5f, -0.5f);  // Center cube at origin
+	floor->translate(-0.5f, 0.5f, -0.5f);  // Center cube at origin
 	sceneRoot->addChild(floor);
 
 	// Create and add 4x4 grid of objects
-	int objId = 0;
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			MeshNode* obj = new MeshNode(objId, i);  // texMode = i
-			obj->setAbsolutePosition((float)i * 3.7f, 0.0f, (float)j * 3.7f);
-			sceneRoot->addChild(obj);
-			objId = (objId + 1) % 6;
-		}
-	}
+	//int objId = 0;
+	//for (int i = 0; i < 4; ++i) {
+	//	for (int j = 0; j < 4; ++j) {
+	//		MeshNode* obj = new MeshNode(objId, i);  // texMode = i
+	//		obj->setAbsolutePosition((float)i * 3.7f, 0.0f, (float)j * 3.7f);
+	//		sceneRoot->addChild(obj);
+	//		objId = (objId + 1) % 6;
+	//	}
+	//}
+
+	carnode = new CarNode(0, 2, nullptr, 0.0f, nullptr, nullptr);
+	orangesManager = new OrangesManager(2, 1);
+	sceneRoot->addChild(carnode);
+	sceneRoot->addChild(orangesManager);
 }
 
 //
@@ -483,6 +532,8 @@ int main(int argc, char **argv) {
 
 //	Mouse and Keyboard Callbacks
 	glutKeyboardFunc(processKeys);
+	/*For when keys are released to stop */
+	glutKeyboardUpFunc(processKeysUp);
 	glutMouseFunc(processMouseButtons);
 	glutMotionFunc(processMouseMotion);
 	glutMouseWheelFunc ( mouseWheel ) ;
