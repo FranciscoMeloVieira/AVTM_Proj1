@@ -27,12 +27,12 @@ private:
 	
 	float speed = 0.0f; // Current speed of the car
 
-	float maxSpeed = 6.0f; 
-	float acceleration = 0.30f; 
-	float brakeDeceleration = 0.50f;
-	float deceleration = 0.20f;
+	float maxSpeed = 60.0f; 
+	float acceleration = 15.0f; 
+	float brakeDeceleration = 60.0f;
+	float deceleration = 5.0f;
 
-	float maxTurnRate = 20.0f; 
+	float maxTurnRate = 200.0f; 
 
     void addChildren();
 };

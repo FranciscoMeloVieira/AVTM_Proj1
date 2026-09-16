@@ -130,7 +130,7 @@ void changeSize(int w, int h) {
 //
 // Render stufff
 //
-
+int lastTime = 0;
 
 
 // ============================================================================
@@ -138,12 +138,12 @@ void changeSize(int w, int h) {
 // ============================================================================
 void renderSim(void) {
 
-	static int lastTime = glutGet(GLUT_ELAPSED_TIME);
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
+	lastTime = currentTime;
 	/*TODO - I don't know how to get elapsed time xd*/
-	carnode->update(0.1);
-	orangesManager->update(0.1);
+	carnode->update(deltaTime);
+	orangesManager->update(deltaTime);
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

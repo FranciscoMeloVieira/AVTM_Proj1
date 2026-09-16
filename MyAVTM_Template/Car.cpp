@@ -34,19 +34,28 @@ CarNode::CarNode(int meshId, int textureId,
 void CarNode::update(float deltaTime)
 {
 	if (isAccelerating)
-		speed += acceleration * deltaTime;
+		if (speed < 0.0f)
+			speed += brakeDeceleration * deltaTime;
+		else
+			speed += acceleration * deltaTime;
 	else if (isDecelerating)
-		speed -= brakeDeceleration * deltaTime;
+		if (speed > 0.0f)
+			speed -= brakeDeceleration * deltaTime;
+		else
+			speed -= acceleration * deltaTime;
 	else
-		speed -= deceleration * deltaTime;
+		if (speed > 0.0f)
+			speed -= deceleration * deltaTime;
+		else 
+			speed += deceleration * deltaTime;
 
-	speed = std::clamp(speed, 0.0f, maxSpeed);
+	speed = std::clamp(speed, -maxSpeed, maxSpeed);
 
-	float turnRate = steering * maxTurnRate;
 
-	if (speed > 0.01f)
+	if (speed > 0.01f || speed < -0.01f)
 	{
 		float turnRate = steering * maxTurnRate;
+		turnRate *= (( - 5.0f / 6.0f * speed * speed + maxSpeed * speed) * (1.0f / maxTurnRate) * 1.0f / 5.4f ); // Adjust turn rate based on speed (example formula)
 		float frameRotation = turnRate * (speed / maxSpeed) * deltaTime;
 		setRotation(frameRotation, 0.0f, 1.0f, 0.0f);
 	}

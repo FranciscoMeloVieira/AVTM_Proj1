@@ -63,9 +63,18 @@ void ScenegraphNode::setTransform(const float* matrix) {
 }
 
 void EmptyNode::draw() {
+	mu.pushMatrix(gmu::MODEL);
+
+	mu.multMatrix(gmu::MODEL, localTransform);
+
+	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
+	mu.computeNormalMatrix3x3();
+
 	for (auto& child : children) {
 		child->draw();
 	}
+
+	mu.popMatrix(gmu::MODEL);
 }
 
 void MeshNode::draw() {
