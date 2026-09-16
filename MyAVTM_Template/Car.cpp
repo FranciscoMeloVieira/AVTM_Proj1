@@ -55,8 +55,9 @@ void CarNode::update(float deltaTime)
 	if (speed > 0.01f || speed < -0.01f)
 	{
 		float turnRate = steering * maxTurnRate;
+		int speed = std::abs(this->speed);
 		turnRate *= (( - 5.0f / 6.0f * speed * speed + maxSpeed * speed) * (1.0f / maxTurnRate) * 1.0f / 5.4f ); // Adjust turn rate based on speed (example formula)
-		float frameRotation = turnRate * (speed / maxSpeed) * deltaTime;
+		float frameRotation = turnRate * deltaTime;
 		setRotation(frameRotation, 0.0f, 1.0f, 0.0f);
 	}
 
