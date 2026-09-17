@@ -36,6 +36,9 @@
 /*TODO*/
 #include "Car.hpp"
 #include "OrangeManager.hpp"
+#include "Camera.hpp"
+#include "CameraFixedPerspective.hpp"
+#include "CameraFixedOrtho.hpp"
 
 using namespace std;
 
@@ -48,6 +51,11 @@ unsigned int FrameCount = 0;
 /*TODO - make better pls*/
 CarNode* carnode = nullptr;
 OrangesManager* orangesManager = nullptr;
+Camera* camera1 = nullptr;
+Camera* camera2 = nullptr;
+Camera* camera3 = nullptr;
+
+Camera* activeCamera = nullptr;
 
 //File with the font
 const string fontPathFile = "fonts/arial.ttf";
@@ -122,7 +130,7 @@ void changeSize(int w, int h) {
 	// set the projection matrix
 	ratio = (1.0f * w) / h;
 	mu.loadIdentity(gmu::PROJECTION);
-	mu.perspective(53.13f, ratio, 0.1f, 1000.0f);
+	activeCamera->loadProjectionMatrix(mu, ratio);
 }
 
 
@@ -150,6 +158,15 @@ void renderSim(void) {
 
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
 
+	if (activeCamera == camera3) {
+		cout << "Hello from Camera 3!" << endl;
+		float* carPos = carnode->getLocalModelMatrix();
+		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
+		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
+		activeCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
+	}
+	activeCamera->applyViewMatrix(mu);
+
 	//Associar os Texture Units aos Objects Texture
 	//stone.tga loaded in TU0; checker.tga loaded in TU1;  lightwood.tga loaded in TU2
 	renderer.setTexUnit(0, 0);
@@ -157,11 +174,7 @@ void renderSim(void) {
 	renderer.setTexUnit(2, 2);
 
 	// load identity matrices
-	mu.loadIdentity(gmu::VIEW);
 	mu.loadIdentity(gmu::MODEL);
-	// set the camera using a function similar to gluLookAt
-	mu.lookAt(camX, camY, camZ, 0, 0, 0, 0, 1, 0);
-
 	//send the light position in eye coordinates
 	renderer.setLightPos(lightPos);
 
@@ -264,6 +277,19 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'd':
 			carnode->steering = -1.0f;
 			break;
+
+		case '1':
+			activeCamera = camera1;
+			changeSize(WinX, WinY);
+			break;
+		case '2':
+			activeCamera = camera2;
+			changeSize(WinX, WinY);
+			break;
+		case '3':
+			activeCamera = camera3;
+			changeSize(WinX, WinY);
+			break;
 	}
 }
 
@@ -334,11 +360,14 @@ void processMouseMotion(int xx, int yy)
 		if (rAux < 0.1f)
 			rAux = 0.1f;
 	}
+	if (activeCamera == camera3)
+	{
+		camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
+		camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
+		camY = rAux * sin(betaAux * 3.14f / 180.0f);
 
-	camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	camY = rAux *   						       sin(betaAux * 3.14f / 180.0f);
-
+	}
+	
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
 }
@@ -394,6 +423,12 @@ void buildSceneGraph() {
 	orangesManager = new OrangesManager(2, 1);
 	sceneRoot->addChild(carnode);
 	sceneRoot->addChild(orangesManager);
+
+	/*TODO - Maybe change location*/
+	camera2 = new CameraFixedOrtho(25.0f, 0.1f, 1000.0f);
+	camera1 = new CameraFixedPerspective(45.0f, 0.1f, 1000.0f);
+	camera3 = new CameraFixedPerspective(60.0f, 0.1f, 1000.0f);
+	activeCamera = camera1;
 }
 
 //

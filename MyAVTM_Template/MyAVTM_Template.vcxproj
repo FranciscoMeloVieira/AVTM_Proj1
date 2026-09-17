@@ -155,6 +155,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.hpp" />
     <ClInclude Include="Car.hpp" />
     <ClInclude Include="cube.h" />
     <ClInclude Include="mathUtility.h" />
@@ -169,6 +170,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basic_geometry.cpp" />
+    <ClCompile Include="CameraFixedOrtho.hpp" />
+    <ClCompile Include="CameraFixedPerspective.hpp" />
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />
