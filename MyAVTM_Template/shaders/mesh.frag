@@ -87,7 +87,7 @@ void main() {
 	else // multitexturing
 	{
 		texel = texture(texmap2, DataIn.tex_coord);  // texel from lighwood.tga
-		texel1 = texture(texmap1, DataIn.tex_coord);  // texel from checker.tga
+		texel1 = texture(texmap, DataIn.tex_coord);  // texel from checker.tga
 		colorOut = vec4(max(intensity*texel*texel1 + spec, 0.07*texel*texel1).rgb, 1.0);
 	}
 }

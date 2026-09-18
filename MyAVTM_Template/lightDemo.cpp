@@ -401,10 +401,10 @@ void buildSceneGraph() {
 	sceneRoot = new EmptyNode();
 
 	// Create and add floor
-	MeshNode* floor = new MeshNode(0, 1);  // meshID=0, texMode=1
-	floor->setAbsolutePosition(0.0f, 0.0f, 0.0f);
-	floor->setScale(30.0f, 0.1f, 30.0f);
-	floor->translate(-0.5f, 0.5f, -0.5f);  // Center cube at origin
+	MeshNode* floor = new MeshNode(0, 4);  // meshID=0, texMode=1
+	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
+	floor->setScale(400.0f, 0.1f, 400.0f);
+	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
 	sceneRoot->addChild(floor);
 
 	// Create and add 4x4 grid of objects
@@ -428,6 +428,76 @@ void buildSceneGraph() {
 	camera1 = new CameraFixedPerspective(45.0f, 0.1f, 1000.0f);
 	camera3 = new CameraFixedPerspective(60.0f, 0.1f, 1000.0f);
 	activeCamera = camera1;
+
+	EmptyNode* racetrack = new EmptyNode();
+	sceneRoot->addChild(racetrack);
+
+	MeshNode* trackSegment = new MeshNode(0, 0); 
+	trackSegment->setTransform(
+		0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 200.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);  // Center cube at origin
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		81.0f, 0.0f, 94.0f,
+		0.0f, 0.0f, 0.0f,
+		150.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		150.0f, 0.0f, 63.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 50.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		94.0f, 0.0f, 44.0f,
+		0.0f, 0.0f, 0.0f,
+		100.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		50.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 75.7f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		94.0f, 0.0f, -32.0f,
+		0.0f, 0.0f, 0.0f,
+		76.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		126.0f, 0.0f, -69.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 62.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		63.4f, 0.0f, -94.0f,
+		0.0f, 0.0f, 0.0f,
+		116.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	racetrack->setScale(2.0f, 0.1f, 2.0f);
+
 }
 
 //
