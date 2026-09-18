@@ -149,7 +149,6 @@ void renderSim(void) {
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
-	/*TODO - I don't know how to get elapsed time xd*/
 	carnode->update(deltaTime);
 	orangesManager->update(deltaTime);
 
@@ -159,7 +158,6 @@ void renderSim(void) {
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
 
 	if (activeCamera == camera3) {
-		cout << "Hello from Camera 3!" << endl;
 		float* carPos = carnode->getLocalModelMatrix();
 		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
 		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
@@ -172,6 +170,7 @@ void renderSim(void) {
 	renderer.setTexUnit(0, 0);
 	renderer.setTexUnit(1, 1);
 	renderer.setTexUnit(2, 2);
+	renderer.setTexUnit(3, 3);
 
 	// load identity matrices
 	mu.loadIdentity(gmu::MODEL);
@@ -420,7 +419,7 @@ void buildSceneGraph() {
 	//}
 
 	carnode = new CarNode(0, 2, nullptr, 0.0f, nullptr, nullptr);
-	orangesManager = new OrangesManager(2, 1);
+	orangesManager = new OrangesManager(2, 3);
 	sceneRoot->addChild(carnode);
 	sceneRoot->addChild(orangesManager);
 
@@ -441,6 +440,7 @@ void buildScene()
 	renderer.TexObjArray.texture2D_Loader("assets/stone.tga");
 	renderer.TexObjArray.texture2D_Loader("assets/checker.png");
 	renderer.TexObjArray.texture2D_Loader("assets/lightwood.tga");
+	renderer.TexObjArray.texture2D_Loader("assets/orange.png");
 
 	//Scene geometry with triangle meshes
 
