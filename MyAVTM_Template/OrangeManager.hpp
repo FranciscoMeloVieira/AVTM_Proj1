@@ -18,9 +18,12 @@ public:
 
 private:
 	orange* oranges;
-	int numOranges = 10;
+	int numOranges = 30;
 
 	int m_meshId;
 	int m_textureId;
 	GLuint instanceVBO = 3;
+
+	int leftBorder = -50, rightBorder = 350, topBorder = 200, bottomBorder = -200;
+	int minOrangeSpeed = 5, maxOrangeSpeed = 20;
 };

@@ -8,11 +8,11 @@ OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_
 {
 	oranges = new orange[numOranges];
 	for (int i = 0; i < numOranges; ++i) {
-		oranges[i].pos[0] = static_cast<float>(rand() % 100 - 50);
+		oranges[i].pos[0] = -500;
 		oranges[i].pos[1] = 10.0f;
-		oranges[i].pos[2] = static_cast<float>(rand() % 100 - 50); 
-		oranges[i].angle = static_cast<float>(rand() % 360); 
-		oranges[i].speed = static_cast<float>(rand()) / RAND_MAX * 5.0f + 1.0f;
+		oranges[i].pos[2] = -500;
+		oranges[i].angle = static_cast<float>(rand() % 360);
+		oranges[i].speed = static_cast<float>(rand()) / RAND_MAX * (maxOrangeSpeed - minOrangeSpeed) + minOrangeSpeed;
 	}
 
 	/*instance VBO*/
@@ -63,29 +63,31 @@ void OrangesManager::update(float deltaTime)
 		oranges[i].pos[0] += oranges[i].speed * cos(oranges[i].angle * 3.14159f / 180.0f) * deltaTime;
 		oranges[i].pos[2] += oranges[i].speed * sin(oranges[i].angle * 3.14159f	/ 180.0f) * deltaTime;
 
-		if (std::abs(oranges[i].pos[0]) > 50 || std::abs(oranges[i].pos[2]) > 50)
+		if (oranges[i].pos[0] < leftBorder || oranges[i].pos[0] > rightBorder ||
+			oranges[i].pos[2] < bottomBorder || oranges[i].pos[2] > topBorder)
 		{
 			int borderLine = rand() % 4;
-
-			float lineOffset = (static_cast<float>(rand()) / RAND_MAX) * (50 * 2.0f) - 50;
 
 			switch (borderLine)
 			{
 			case 0: // North Line (+Z border)
-				oranges[i].pos[0] = lineOffset;
-				oranges[i].pos[2] = 50.0f;
+				oranges[i].pos[0] = leftBorder + (static_cast<float>(rand()) / RAND_MAX) * (rightBorder - leftBorder);
+				oranges[i].pos[2] = topBorder;
 				break;
+
 			case 1: // South Line (-Z border)
-				oranges[i].pos[0] = lineOffset;
-				oranges[i].pos[2] = -50.0f;
+				oranges[i].pos[0] = leftBorder + (static_cast<float>(rand()) / RAND_MAX) * (rightBorder - leftBorder);
+				oranges[i].pos[2] = bottomBorder;
 				break;
+
 			case 2: // East Line (+X border)
-				oranges[i].pos[0] = 50.0f;
-				oranges[i].pos[2] = lineOffset;
+				oranges[i].pos[0] = rightBorder;
+				oranges[i].pos[2] = bottomBorder + (static_cast<float>(rand()) / RAND_MAX) * (topBorder - bottomBorder);
 				break;
+
 			case 3: // West Line (-X border)
-				oranges[i].pos[0] = -50.0f;
-				oranges[i].pos[2] = lineOffset;
+				oranges[i].pos[0] = leftBorder;
+				oranges[i].pos[2] = bottomBorder + (static_cast<float>(rand()) / RAND_MAX) * (topBorder - bottomBorder);
 				break;
 			}
 		}

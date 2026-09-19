@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="Car.hpp" />
+    <ClInclude Include="CheriosManager.hpp" />
     <ClInclude Include="cube.h" />
     <ClInclude Include="mathUtility.h" />
     <ClInclude Include="model.h" />
@@ -173,6 +174,7 @@
     <ClCompile Include="CameraFixedOrtho.hpp" />
     <ClCompile Include="CameraFixedPerspective.hpp" />
     <ClCompile Include="Car.cpp" />
+    <ClCompile Include="CheriosManager.cpp" />
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />
     <ClCompile Include="OrangeManager.cpp" />

@@ -98,35 +98,35 @@ void CarNode::addChildren()
 	);
 	this->addChild(carTop);
 
-	MeshNode* wheel1 = new MeshNode(3, 3);
+	MeshNode* wheel1 = new MeshNode(5, 3);
 	wheel1->setTransform(
 		0.0f - 1.7f, 1.5f, 1.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,
-		2.0f, 0.5f, 2.0f
+		0.7f, 0.7f, 0.7f
 	);
 	this->addChild(wheel1);
 
-	MeshNode* wheel2 = new MeshNode(3, 3);
+	MeshNode* wheel2 = new MeshNode(5, 3);
 	wheel2->setTransform(
 		3.4f - 1.7f, 1.5f, 1.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,
-		2.0f, 0.5f, 2.0f
+		0.7f, 0.7f, 0.7f
 	);
 	this->addChild(wheel2);
 
-	MeshNode* wheel3 = new MeshNode(3, 3);
+	MeshNode* wheel3 = new MeshNode(5, 3);
 	wheel3->setTransform(
 		0.0f - 1.7f, 1.5f, 6.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,
-		2.0f, 0.5f, 2.0f
+		0.7f, 0.7f, 0.7f
 	);
 	this->addChild(wheel3);
 
-	MeshNode* wheel4 = new MeshNode(3, 3);
+	MeshNode* wheel4 = new MeshNode(5, 3);
 	wheel4->setTransform(
 		3.4f - 1.7f, 1.5f, 6.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,
-		2.0f, 0.5f, 2.0f
+		0.7f, 0.7f, 0.7f
 	);
 	this->addChild(wheel4);
 }

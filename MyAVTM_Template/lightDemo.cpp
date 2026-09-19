@@ -39,6 +39,7 @@
 #include "Camera.hpp"
 #include "CameraFixedPerspective.hpp"
 #include "CameraFixedOrtho.hpp"
+#include "CheriosManager.hpp"
 
 using namespace std;
 
@@ -51,6 +52,7 @@ unsigned int FrameCount = 0;
 /*TODO - make better pls*/
 CarNode* carnode = nullptr;
 OrangesManager* orangesManager = nullptr;
+CheriosManager* cheriosManager = nullptr;
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
@@ -152,6 +154,7 @@ void renderSim(void) {
 	lastTime = currentTime;
 	carnode->update(deltaTime);
 	orangesManager->update(deltaTime);
+	cheriosManager->update(deltaTime);
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -410,6 +413,8 @@ void buildSceneGraph() {
 
 	carnode = new CarNode(0, 2, nullptr, 0.0f, nullptr, nullptr);
 	orangesManager = new OrangesManager(2, 3);
+	cheriosManager = new CheriosManager(5, 1, 12.0f);
+	sceneRoot->addChild(cheriosManager);
 	sceneRoot->addChild(carnode);
 	sceneRoot->addChild(orangesManager);
 
@@ -487,7 +492,6 @@ void buildSceneGraph() {
 	racetrack->addChild(trackSegment);
 
 	racetrack->setScale(2.0f, 0.1f, 2.0f);
-
 }
 
 //
