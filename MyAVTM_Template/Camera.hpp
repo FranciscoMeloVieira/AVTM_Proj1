@@ -17,8 +17,8 @@ public:
 
 	virtual void loadProjectionMatrix(gmu& mu, float ratio) const = 0;
 private:
-	float camX = 0.0f, camY = 50.0f, camZ = 0.0f;
-	float targetX = 0.0f, targetY = 0.0f, targetZ = 0.0f; 
+	float camX = 150.0f, camY = 200.0f, camZ = 0.0f;
+	float targetX = 150.0f, targetY = 0.0f, targetZ = 0.0f;
 	float upX = 0.0f, upY = 0.0f, upZ = -1.0f; 
 };
 

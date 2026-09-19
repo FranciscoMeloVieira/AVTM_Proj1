@@ -6,7 +6,7 @@ public:
     float fov;
     float nearPlane, farPlane;
 
-    CameraFixedPerspective(float fov = 45.0f, float nearPlane = 0.1f, float farPlane = 1000.0f)
+    CameraFixedPerspective(float fov = 90.0f, float nearPlane = 0.1f, float farPlane = 1000.0f)
         : fov(fov), nearPlane(nearPlane), farPlane(farPlane) {
     }
 

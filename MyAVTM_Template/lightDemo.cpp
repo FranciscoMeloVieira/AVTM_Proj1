@@ -66,11 +66,11 @@ gmu mu;
 //Object of class renderer to manage the rendering of meshes and ttf-based bitmap text
 Renderer renderer;
 	
-// Camera Position
-float camX, camY, camZ;
+// Camera Position (initialize to same defaults as Camera)
+float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
 
 // Camera Spherical Coordinates
-float alpha = 57.0f, _beta = 18.0f;
+float alpha = 180.0f, _beta = 45.0f;
 float r = 45.0f;
 
 // Mouse Tracking Variables
@@ -120,7 +120,8 @@ void refresh(int value)
 //
 
 void changeSize(int w, int h) {
-
+	WinX = w;
+	WinY = h;
 	float ratio;
 	// Prevent a divide by zero, when window is too short
 	if(h == 0)
@@ -407,26 +408,15 @@ void buildSceneGraph() {
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
 	sceneRoot->addChild(floor);
 
-	// Create and add 4x4 grid of objects
-	//int objId = 0;
-	//for (int i = 0; i < 4; ++i) {
-	//	for (int j = 0; j < 4; ++j) {
-	//		MeshNode* obj = new MeshNode(objId, i);  // texMode = i
-	//		obj->setAbsolutePosition((float)i * 3.7f, 0.0f, (float)j * 3.7f);
-	//		sceneRoot->addChild(obj);
-	//		objId = (objId + 1) % 6;
-	//	}
-	//}
-
 	carnode = new CarNode(0, 2, nullptr, 0.0f, nullptr, nullptr);
 	orangesManager = new OrangesManager(2, 3);
 	sceneRoot->addChild(carnode);
 	sceneRoot->addChild(orangesManager);
 
 	/*TODO - Maybe change location*/
-	camera2 = new CameraFixedOrtho(25.0f, 0.1f, 1000.0f);
-	camera1 = new CameraFixedPerspective(45.0f, 0.1f, 1000.0f);
-	camera3 = new CameraFixedPerspective(60.0f, 0.1f, 1000.0f);
+	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);
+	camera2 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
+	camera3 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	activeCamera = camera1;
 
 	EmptyNode* racetrack = new EmptyNode();
