@@ -17,6 +17,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <array>
 
 // include GLEW to access OpenGL 3.3 functions
 #include <GL/glew.h>
@@ -86,8 +87,18 @@ char s[32];
 //float lightPos[4] = {4.0f, 5.0f, 2.0f, 1.0f};
 float lightPos[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
+array<float[4], 6> pointLights = { {
+		{ 0.0f, 0.0f, 0.0f, 1.0f },
+		{ 0.0f, 0.0f, 0.5f, 1.0f },
+		{ 0.5f, 0.0f, 0.0f, 1.0f },
+		{ -0.5f, 0.0f, -0.5f, 1.0f },
+		{ 0.0f, 0.0f, -0.5f, 1.0f },
+		{ -0.5f, 0.0f, 0.0f, 1.0f }
+	}};
+
 //Spotlight
 bool spotlight_mode = false;
+bool pointlight_mode = true;
 float coneDir[4] = { 0.0f, -0.0f, -1.0f, 0.0f };
 
 bool fontLoaded = false;
@@ -163,7 +174,7 @@ void renderSim(void) {
 
 	if (activeCamera == camera3) {
 		float* carPos = carnode->getLocalModelMatrix();
-		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
+		activeCamera->setCameraPosition(carPos[12] + camX, carPos[13] + camY, carPos[14] + camZ);
 		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
 		activeCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
 	}
@@ -176,6 +187,14 @@ void renderSim(void) {
 	renderer.setTexUnit(2, 2);
 	renderer.setTexUnit(3, 3);
 
+	//Set up point lights
+	renderer.setPointLight(0, pointLights[0]);
+	renderer.setPointLight(1, pointLights[1]);
+	renderer.setPointLight(2, pointLights[2]);
+	renderer.setPointLight(3, pointLights[3]);
+	renderer.setPointLight(4, pointLights[4]);
+	renderer.setPointLight(5, pointLights[5]);
+
 	// load identity matrices
 	mu.loadIdentity(gmu::MODEL);
 	//send the light position in eye coordinates
@@ -183,6 +202,7 @@ void renderSim(void) {
 
 	//Spotlight settings
 	renderer.setSpotLightMode(spotlight_mode);
+	renderer.setPointLightMode(pointlight_mode);
 	renderer.setSpotParam(coneDir, 0.93);
 
 	// ===== RENDER SCENEGRAPH =====
@@ -242,7 +262,7 @@ void processKeys(unsigned char key, int xx, int yy)
 			glutLeaveMainLoop();
 			break;
 
-		case 'c': 
+		case 'k': 
 			printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, _beta, r);
 			break;
 
@@ -254,6 +274,17 @@ void processKeys(unsigned char key, int xx, int yy)
 			else {
 				spotlight_mode = false;
 				printf("Spot light disabled. Point light enabled\n");
+			}
+			break;
+
+		case 'c':   //toggle pointlights
+			if (!pointlight_mode) {
+				pointlight_mode = true;
+				printf("Point lights disabled\n");
+			}
+			else {
+				pointlight_mode = false;
+				printf("Point lights enabled\n");
 			}
 			break;
 

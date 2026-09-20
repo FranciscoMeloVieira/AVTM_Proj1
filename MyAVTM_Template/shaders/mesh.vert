@@ -4,7 +4,6 @@ uniform mat4 m_pvm;
 uniform mat4 m_viewModel;
 uniform mat3 m_normal;
 
-
 uniform vec4 l_pos;
 
 in vec4 position;
@@ -19,6 +18,8 @@ out Data {
 	vec2 tex_coord;
 } DataOut;
 
+out vec4 local_pos;
+
 void main () {
 
 	vec4 instancePosition = position + vec4(instancePos, 0.0);
@@ -28,6 +29,7 @@ void main () {
 	DataOut.lightDir = vec3(l_pos - pos);
 	DataOut.eye = vec3(-pos);
 	DataOut.tex_coord = texCoord.st;
+	local_pos = position;
 
 	gl_Position = m_pvm * instancePosition;	
 }

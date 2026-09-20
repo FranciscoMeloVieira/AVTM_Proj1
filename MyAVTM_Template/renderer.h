@@ -58,7 +58,11 @@ public:
 
   void setSpotLightMode(bool spotLightMode);
 
+  void setPointLightMode(bool PointLightMode);
+
   void setTexUnit(int tuId, int texObjArray_pos);
+
+  void setPointLight(int plId, float* loc);
 
   void renderMeshInstanced(const dataMesh& data, GLsizei instanceCount);
 
@@ -77,6 +81,7 @@ private:
   GLuint textProgram;
 
   GLint pvm_loc, vm_loc, normal_loc, lpos_loc, texMode_loc;
+  GLint pl_loc[6]; // Point Lights
   GLint tex_loc[MAX_TEXTURES];
 
   //render font GLSL program variable locations and VAO

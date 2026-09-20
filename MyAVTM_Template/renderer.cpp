@@ -155,6 +155,12 @@ bool Renderer::setRenderMeshesShaderProg(const std::string& vertShaderPath, cons
     tex_loc[1] = glGetUniformLocation(program, "texmap1");
     tex_loc[2] = glGetUniformLocation(program, "texmap2");
 	tex_loc[3] = glGetUniformLocation(program, "texmap3");
+    pl_loc[0] = glGetUniformLocation(program, "pl_loc_1");
+    pl_loc[1] = glGetUniformLocation(program, "pl_loc_2");
+    pl_loc[2] = glGetUniformLocation(program, "pl_loc_3");
+    pl_loc[3] = glGetUniformLocation(program, "pl_loc_4");
+    pl_loc[4] = glGetUniformLocation(program, "pl_loc_5");
+    pl_loc[5] = glGetUniformLocation(program, "pl_loc_6");
 
     return(shader.isProgramLinked() && shader.isProgramValid());
 }
@@ -215,6 +221,14 @@ void Renderer::setSpotLightMode(bool spotLightMode) {
     else
         glUniform1i(loc, 0);
 }
+void Renderer::setPointLightMode(bool pointLightMode) {
+    GLint loc;
+    loc = glGetUniformLocation(program, "pointlight_mode");
+    if (pointLightMode)
+        glUniform1i(loc, 1);
+    else
+        glUniform1i(loc, 0);
+}
 
 void Renderer::setLightPos(float* lightPos) {
     glUniform4fv(lpos_loc, 1, lightPos);
@@ -224,6 +238,10 @@ void Renderer::setTexUnit(int tuId, int texObjArray_pos) {
     glActiveTexture(GL_TEXTURE0 + tuId);
     glBindTexture(GL_TEXTURE_2D, TexObjArray.getTextureId(texObjArray_pos));
     glUniform1i(tex_loc[tuId], tuId);
+}
+
+void Renderer::setPointLight(int plId, float* loc) {
+    glUniform4fv(pl_loc[plId], 1, loc);
 }
 
 void Renderer::renderMesh(const dataMesh& data) {
