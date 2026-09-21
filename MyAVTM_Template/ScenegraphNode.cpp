@@ -39,7 +39,9 @@ void ScenegraphNode::translate(const float deltaX, const float deltaY, const flo
 void ScenegraphNode::setAbsolutePosition(const float x, const float y, const float z) {
 	float currentPosition[3] = { localTransform[12], localTransform[13], localTransform[14] };
 	float delta[3] = { x - currentPosition[0], y - currentPosition[1], z - currentPosition[2] };
-	translate(delta[0], delta[1], delta[2]);
+	localTransform[12] = x;
+	localTransform[13] = y;
+	localTransform[14] = z;
 }
 
 void ScenegraphNode::setRotation(float angle, const float x, const float y, const float z) {

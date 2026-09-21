@@ -16,10 +16,10 @@ public:
 	void draw() override;
 	void update(float deltaTime);
 
-private:
 	orange* oranges;
 	int numOranges = 30;
 
+private:
 	int m_meshId;
 	int m_textureId;
 	GLuint instanceVBO = 3;

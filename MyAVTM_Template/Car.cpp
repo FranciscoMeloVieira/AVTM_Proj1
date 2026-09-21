@@ -68,6 +68,11 @@ void CarNode::update(float deltaTime)
 		speed = 0.0f;
 	}
 
+	if (collisionManager->isCarCollidingWithOranges())
+	{
+		setAbsolutePosition(0.0f, 0.0f, 0.0f);
+		speed = 0.0f;
+	}
 }
 
 void CarNode::draw()

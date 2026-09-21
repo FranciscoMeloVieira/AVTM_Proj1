@@ -418,11 +418,11 @@ void buildSceneGraph() {
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
 	sceneRoot->addChild(floor);
 
-	cheriosManager = new CheriosManager(5, 1, 12.0f);
-	collisionManager = new CollisionManager(nullptr, cheriosManager);
-	carnode = new CarNode(collisionManager, 0, 2, nullptr, 0.0f, nullptr, nullptr);
-	collisionManager->setCarNode(carnode);
 	orangesManager = new OrangesManager(2, 3);
+	cheriosManager = new CheriosManager(5, 1, 12.0f);
+	collisionManager = new CollisionManager(nullptr, cheriosManager, orangesManager);
+	carnode = new CarNode(collisionManager, 0, 2, nullptr, 0.0f, nullptr, nullptr);
+	collisionManager->setCarNode(carnode); // Cyclic reference, but we need it to check for collisions
 	sceneRoot->addChild(cheriosManager);
 	sceneRoot->addChild(carnode);
 	sceneRoot->addChild(orangesManager);
