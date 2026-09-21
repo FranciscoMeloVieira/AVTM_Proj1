@@ -1,3 +1,4 @@
+#pragma once
 #include <ScenegraphNode.h>
 
 class CarNode : public ScenegraphNode {
@@ -14,6 +15,7 @@ public:
         const float(&transformMatrix)[16]);
     void draw();
     void update(float deltaTime);
+    void stopCar();
 
     float steering = 0;
     bool isAccelerating = false;

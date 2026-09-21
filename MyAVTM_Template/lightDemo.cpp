@@ -40,6 +40,7 @@
 #include "CameraFixedPerspective.hpp"
 #include "CameraFixedOrtho.hpp"
 #include "CheriosManager.hpp"
+#include "CollisionManager.hpp"
 
 using namespace std;
 
@@ -152,6 +153,11 @@ void renderSim(void) {
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
+	bool isColliding = CollisionManager::isCarCollidingWithCherios(*carnode, *cheriosManager);
+	if (isColliding)
+	{
+		carnode->stopCar();
+	}
 	carnode->update(deltaTime);
 	orangesManager->update(deltaTime);
 	cheriosManager->update(deltaTime);

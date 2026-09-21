@@ -9,7 +9,7 @@ OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_
 	oranges = new orange[numOranges];
 	for (int i = 0; i < numOranges; ++i) {
 		oranges[i].pos[0] = -500;
-		oranges[i].pos[1] = 10.0f;
+		oranges[i].pos[1] = 3.0f;
 		oranges[i].pos[2] = -500;
 		oranges[i].angle = static_cast<float>(rand() % 360);
 		oranges[i].speed = static_cast<float>(rand()) / RAND_MAX * (maxOrangeSpeed - minOrangeSpeed) + minOrangeSpeed;

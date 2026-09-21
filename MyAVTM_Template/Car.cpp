@@ -80,6 +80,14 @@ void CarNode::draw()
 	mu.popMatrix(gmu::MODEL);
 }
 
+void CarNode::stopCar()
+{
+	speed = 0.0f;
+	isAccelerating = false;
+	isDecelerating = false;
+	steering = 0.0f;
+}
+
 void CarNode::addChildren()
 {
 	MeshNode* carBody = new MeshNode(0, 2);

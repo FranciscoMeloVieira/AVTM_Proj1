@@ -175,6 +175,8 @@
     <ClCompile Include="CameraFixedPerspective.hpp" />
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="CheriosManager.cpp" />
+    <ClCompile Include="CollisionManager.cpp" />
+    <ClCompile Include="CollisionManager.hpp" />
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />
     <ClCompile Include="OrangeManager.cpp" />
