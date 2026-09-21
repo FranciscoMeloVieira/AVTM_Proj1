@@ -51,6 +51,7 @@ int WinX = 640, WinY = 480;
 unsigned int FrameCount = 0;
 
 /*TODO - make better pls*/
+CollisionManager* collisionManager = nullptr;
 CarNode* carnode = nullptr;
 OrangesManager* orangesManager = nullptr;
 CheriosManager* cheriosManager = nullptr;
@@ -153,7 +154,7 @@ void renderSim(void) {
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
-	bool isColliding = CollisionManager::isCarCollidingWithCherios(*carnode, *cheriosManager);
+	bool isColliding = collisionManager->isCarCollidingWithCherios();
 	if (isColliding)
 	{
 		carnode->stopCar();
@@ -417,9 +418,11 @@ void buildSceneGraph() {
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
 	sceneRoot->addChild(floor);
 
-	carnode = new CarNode(0, 2, nullptr, 0.0f, nullptr, nullptr);
-	orangesManager = new OrangesManager(2, 3);
 	cheriosManager = new CheriosManager(5, 1, 12.0f);
+	collisionManager = new CollisionManager(nullptr, cheriosManager);
+	carnode = new CarNode(collisionManager, 0, 2, nullptr, 0.0f, nullptr, nullptr);
+	collisionManager->setCarNode(carnode);
+	orangesManager = new OrangesManager(2, 3);
 	sceneRoot->addChild(cheriosManager);
 	sceneRoot->addChild(carnode);
 	sceneRoot->addChild(orangesManager);

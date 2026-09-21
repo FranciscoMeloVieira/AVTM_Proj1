@@ -8,12 +8,12 @@
 
 extern gmu mu;
 
-CarNode::CarNode(int meshId, int textureId,
+CarNode::CarNode(CollisionManager* collisionManager, int meshId, int textureId,
 	const float* position,
 	float angle,
 	const float* axis,
 	const float* scale)
-	: ScenegraphNode(position, angle, axis, scale),
+	: ScenegraphNode(position, angle, axis, scale), collisionManager(collisionManager),
 	meshID(meshId),
 	texMode(textureId)
 {
@@ -62,6 +62,12 @@ void CarNode::update(float deltaTime)
 	}
 
 	translate(0.0f, 0.0f, speed * deltaTime);
+	if (collisionManager->isCarCollidingWithCherios())
+	{
+		translate(0.0f, 0.0f, -speed * deltaTime);
+		speed = 0.0f;
+	}
+
 }
 
 void CarNode::draw()

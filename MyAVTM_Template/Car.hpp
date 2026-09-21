@@ -1,11 +1,12 @@
 #pragma once
 #include <ScenegraphNode.h>
+#include "CollisionManager.hpp"
 
 class CarNode : public ScenegraphNode {
 
 
 public:
-    CarNode(int meshId, int textureId,
+    CarNode(CollisionManager* collisionManager, int meshId, int textureId,
         const float* position = nullptr,
         float angle = 0.0f,
         const float* axis = nullptr,
@@ -22,6 +23,9 @@ public:
 	bool isDecelerating = false;
 
 private:
+
+	CollisionManager* collisionManager;
+
 	int meshID = 0;
 	int texMode = 1;
 
@@ -34,7 +38,7 @@ private:
 	float brakeDeceleration = 60.0f;
 	float deceleration = 5.0f;
 
-	float maxTurnRate = 200.0f; 
+	float maxTurnRate = 200.0f;
 
     void addChildren();
 };

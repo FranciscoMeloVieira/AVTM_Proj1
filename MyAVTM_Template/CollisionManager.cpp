@@ -1,8 +1,11 @@
 #include "CollisionManager.hpp"
 
-bool CollisionManager::isCarCollidingWithCherios(CarNode& carNode, CheriosManager& cheriosManager)
+#include "Car.hpp"
+#include "CheriosManager.hpp"
+
+bool CollisionManager::isCarCollidingWithCherios()
 {
-	const float* matrix = carNode.getLocalModelMatrix();
+	const float* matrix = carNode->getLocalModelMatrix();
 	float carX = matrix[12];
 	float carZ = matrix[14];
 
@@ -16,7 +19,7 @@ bool CollisionManager::isCarCollidingWithCherios(CarNode& carNode, CheriosManage
 
 	const float cheerioRadius = 0.5f;
 
-	const auto& torusPositions = cheriosManager.torusPositions;
+	const auto& torusPositions = cheriosManager->torusPositions;
 
 	for (const auto& torusPos : torusPositions)
 	{

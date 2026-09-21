@@ -1,10 +1,16 @@
 #pragma once
-#include "Car.hpp"
-#include "CheriosManager.hpp"
+
+class CarNode;          
+class CheriosManager;
 
 class CollisionManager {
 public:
-	CollisionManager() = default;
+	CollisionManager(CarNode* carNode, CheriosManager* cheriosManager) : carNode(carNode), cheriosManager(cheriosManager) {}
 
-	static bool isCarCollidingWithCherios(CarNode& carNode, CheriosManager& cheriosManager);	
+	bool isCarCollidingWithCherios();
+	void setCarNode(CarNode* carNode) { this->carNode = carNode; }
+
+private:
+	CarNode* carNode;
+	CheriosManager* cheriosManager;
 };
