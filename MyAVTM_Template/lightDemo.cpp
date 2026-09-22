@@ -191,6 +191,7 @@ void renderSim(void) {
 
 	// ===== RENDER SCENEGRAPH =====
 	sceneRoot->draw();
+	orangesManager->draw();
 
 	// ===== RENDER TEXT =====
 	if (fontLoaded) {
@@ -418,12 +419,14 @@ void buildSceneGraph() {
 	orangesManager = new OrangesManager(2, 3);
 	cheriosManager = new CheriosManager(5, 1, 12.0f);
 	collisionManager = new CollisionDetector();
-	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); // Cyclic reference, but we need it to check for collisions
+	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); 
 	sceneRoot->addChild(cheriosManager);
 	sceneRoot->addChild(carnode->carNode);
-	sceneRoot->addChild(orangesManager);
 
 	collisionManager->AddGameObject(carnode);
+	for (int i = 0; i < orangesManager->numOranges; i++) {
+		collisionManager->AddGameObject(&orangesManager->oranges[i]);
+	}
 
 	/*TODO - Maybe change location*/
 	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);

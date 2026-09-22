@@ -15,7 +15,7 @@ public:
     Car(int meshId, int textureId,
         const float(&transformMatrix)[16]);
     void draw();
-    void update(float deltaTime);
+    void update(float deltaTime) override;
     void stopCar();
 
     float steering = 0;

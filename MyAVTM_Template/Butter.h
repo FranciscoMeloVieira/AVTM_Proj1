@@ -16,7 +16,7 @@ class Butter : public PhysicsObject
 public:
 	Butter(int meshID, int texMode, Vector3 pos);
 	MeshNode* butterNode;
-	void update(float deltaTime);
+	void update(float deltaTime) override;
 	void OnCollision(const GameObject& other, const CollisionInfo& info) override;
 	void setPosition(float x, float y, float z) {
 		butterNode->setAbsolutePosition(x, y, z);

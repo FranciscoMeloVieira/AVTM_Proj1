@@ -1,29 +1,31 @@
 #include <ScenegraphNode.h>
 #include <GL/glew.h>
+#include "GameObject.h"
 
-static struct orange
+class Orange : public PhysicsObject
 {
-	float pos[3];
-	float angle;
-	float speed;
+public:
+	void OnCollision(const GameObject& other, const CollisionInfo& info) override;
 };
 
-class OrangesManager : public ScenegraphNode {
+class OrangesManager {
 
 public:
 	OrangesManager(int meshId, int textureId);
 	~OrangesManager();
-	void draw() override;
+	void draw();
 	void update(float deltaTime);
-
-	orange* oranges;
+	void uploadInstanceData();
 	int numOranges = 30;
+	std::vector<Orange> oranges;
 
 private:
+	void spawnOrange(Orange& orange);
 	int m_meshId;
 	int m_textureId;
 	GLuint instanceVBO = 3;
 
-	int leftBorder = -50, rightBorder = 350, topBorder = 200, bottomBorder = -200;
+
+	float leftBorder = -50.0f, rightBorder = 350.0f, topBorder = 200.0f, bottomBorder = -200.0f;
 	int minOrangeSpeed = 5, maxOrangeSpeed = 20;
 };

@@ -8,6 +8,7 @@ class GameObject
 public:
 	Vector3 position;
 	Vector3 rotation;
+	virtual void update(float deltaTime) = 0;
 
 };
 
@@ -23,5 +24,6 @@ public:
 	Collider* collider;
 
 	virtual void OnCollision(const GameObject& other, const CollisionInfo& info) override = 0;
+	void update(float deltaTime) {};
 };
 
