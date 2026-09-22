@@ -2,10 +2,7 @@
 #include <ScenegraphNode.h>
 #include <GL/glew.h>
 #include <vector>
-
-struct Vector3 {
-    float x, y, z;
-};
+#include "Vector3.h"
 
 class CheriosManager : public ScenegraphNode {
 private:

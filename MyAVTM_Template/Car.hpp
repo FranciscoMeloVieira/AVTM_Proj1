@@ -1,18 +1,18 @@
 #pragma once
 #include <ScenegraphNode.h>
-#include "CollisionManager.hpp"
+#include "GameObject.h"
 
-class CarNode : public ScenegraphNode {
+class Car : public PhysicsObject {
 
 
 public:
-    CarNode(CollisionManager* collisionManager, int meshId, int textureId,
+    Car(int meshId, int textureId,
         const float* position = nullptr,
         float angle = 0.0f,
         const float* axis = nullptr,
         const float* scale = nullptr);
 
-    CarNode(int meshId, int textureId,
+    Car(int meshId, int textureId,
         const float(&transformMatrix)[16]);
     void draw();
     void update(float deltaTime);
@@ -21,24 +21,28 @@ public:
     float steering = 0;
     bool isAccelerating = false;
 	bool isDecelerating = false;
+    EmptyNode* carNode = nullptr; // Node representing the car
+    void OnCollision(const GameObject& other, const CollisionInfo& info) override;
 
 private:
-
-	CollisionManager* collisionManager;
-
-	int meshID = 0;
-	int texMode = 1;
-
     /* Variables for driving */
 	
-	float speed = 0.0f; // Current speed of the car
+	float accelerationForce = 100.0f;
+    float brakeForce = 300.0f;
+	float deceleration = 1.0f;
 
-	float maxSpeed = 60.0f; 
-	float acceleration = 15.0f; 
-	float brakeDeceleration = 60.0f;
-	float deceleration = 5.0f;
+    float maxSpeed = 30.0f;
+	float maxAcceleration = 10.0f;
+    float dragCoefficient = 0.8f;
+    float tireGrip = 12.0f;
 
-	float maxTurnRate = 200.0f;
+	float maxTurnRate = 90.0f; 
+	Vector3 facingDirection = { 0.0f, 0.0f, 1.0f }; 
+	float currentRotationY = 0.0f; 
 
     void addChildren();
+
+	Vector3 getForwardVector() {
+		return Vector3(std::sin(rotation.y), 0.0f, std::cos(rotation.y));
+	}
 };

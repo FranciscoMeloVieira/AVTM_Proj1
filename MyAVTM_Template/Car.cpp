@@ -8,98 +8,130 @@
 
 extern gmu mu;
 
-CarNode::CarNode(CollisionManager* collisionManager, int meshId, int textureId,
+Car::Car(int meshId, int textureId,
 	const float* position,
 	float angle,
 	const float* axis,
 	const float* scale)
-	: ScenegraphNode(position, angle, axis, scale), collisionManager(collisionManager),
-	meshID(meshId),
-	texMode(textureId)
 {
-	if (position) {
-		setAbsolutePosition(position[0], position[1], position[2]);
-	}
-
-	if (angle != 0.0f && axis) {
-		setRotation(angle, axis[0], axis[1], axis[2]);
-	}
-
-	if (scale) {
-		setScale(scale[0], scale[1], scale[2]);
-	}
+	carNode = new EmptyNode(position, angle, axis, scale);
 	addChildren();
+
+	collider = new Collider();
+	collider->position = { 0.0f, 0.0f, 0.0f };
+	collider->max = { 5.0f, 5.0f, 5.0f };
+	collider->min = { -5.0f, -5.0f, -5.0f };
 }
 
-void CarNode::update(float deltaTime)
+
+
+void Car::update(float deltaTime)
 {
+	acceleration = { 0.0f, 0.0f, 0.0f };
+
+	// 1. Determine signed speed (positive = forward, negative = reverse)
+	float forwardSpeed = Dot(velocity, facingDirection);
+	float absoluteSpeed = std::abs(forwardSpeed);
+	bool isReversing = forwardSpeed < -0.1f;
+
+	// 2. Scale turning rate based on current absolute speed
+	float speedRatio = std::min(absoluteSpeed / maxSpeed, 1.0f);
+
+	// Minimal turn capability at rest, scaling up with speed
+	float turnSpeedMultiplier = 0.10f + (0.90f * speedRatio);
+
+	// 3. Apply direction sign so reversing turns in the correct arc
+	float directionSign = isReversing ? -1.0f : 1.0f;
+	float steeringAngle = -steering * maxTurnRate * turnSpeedMultiplier * directionSign * deltaTime;
+
+	float radians = steeringAngle * 3.14159265f / 180.0f;
+
+	facingDirection = Normalize(RotateY(facingDirection, radians));
+
+	// Rotation/Visual Node logic
+	float targetAngle = std::atan2(facingDirection.x, facingDirection.z);
+	float targetDegrees = targetAngle * 180.0f / 3.14159265f;
+	float rotationDifference = targetDegrees - currentRotationY;
+
+	while (rotationDifference > 180.0f) rotationDifference -= 360.0f;
+	while (rotationDifference < -180.0f) rotationDifference += 360.0f;
+
+	currentRotationY += rotationDifference;
+	carNode->setRotation(rotationDifference, 0.0f, 1.0f, 0.0f);
+
+	// 4. Compute Acceleration & Reversing Logic
 	if (isAccelerating)
-		if (speed < 0.0f)
-			speed += brakeDeceleration * deltaTime;
-		else
-			speed += acceleration * deltaTime;
+	{
+		acceleration += facingDirection * accelerationForce;
+	}
 	else if (isDecelerating)
-		if (speed > 0.0f)
-			speed -= brakeDeceleration * deltaTime;
+	{
+		// If moving forward, brake. If stopped or already moving backward, reverse.
+		if (forwardSpeed > 0.1f)
+		{
+			acceleration -= facingDirection * brakeForce;
+		}
 		else
-			speed -= acceleration * deltaTime;
-	else
-		if (speed > 0.0f)
-			speed -= deceleration * deltaTime;
-		else 
-			speed += deceleration * deltaTime;
-
-	speed = std::clamp(speed, -maxSpeed, maxSpeed);
-
-
-	if (speed > 0.01f || speed < -0.01f)
-	{
-		float turnRate = steering * maxTurnRate;
-		int speed = std::abs(this->speed);
-		turnRate *= (( - 5.0f / 6.0f * speed * speed + maxSpeed * speed) * (1.0f / maxTurnRate) * 1.0f / 5.4f ); // Adjust turn rate based on speed (example formula)
-		float frameRotation = turnRate * deltaTime;
-		setRotation(frameRotation, 0.0f, 1.0f, 0.0f);
+		{
+			// Reverse drive force
+			float reverseForce = accelerationForce * 0.5f; // Reverse is usually slower
+			acceleration -= facingDirection * reverseForce;
+		}
 	}
 
-	translate(0.0f, 0.0f, speed * deltaTime);
-	if (collisionManager->isCarCollidingWithCherios())
+	// 5. Apply Drag
+	acceleration -= velocity * dragCoefficient;
+
+	// 6. Physics Integration
+	velocity += acceleration * deltaTime;
+
+	// Stop completely if minimal input and speed
+	if (!isAccelerating && !isDecelerating && Length(velocity) < 0.1f)
 	{
-		translate(0.0f, 0.0f, -speed * deltaTime);
-		speed = 0.0f;
+		velocity = { 0.0f, 0.0f, 0.0f };
 	}
 
-	if (collisionManager->isCarCollidingWithOranges())
-	{
-		setAbsolutePosition(0.0f, 0.0f, 0.0f);
-		speed = 0.0f;
-	}
+	// 7. Lateral Friction
+	Vector3 rightDirection = { facingDirection.z, 0.0f, -facingDirection.x };
+
+	float currentForwardSpeed = Dot(velocity, facingDirection);
+	float currentLateralSpeed = Dot(velocity, rightDirection);
+
+	currentLateralSpeed *= std::exp(-tireGrip * deltaTime);
+
+	velocity = (facingDirection * currentForwardSpeed) + (rightDirection * currentLateralSpeed);
+
+	// 8. Apply Position Updates
+	position += velocity * deltaTime;
+
+	collider->position = position;
+	carNode->setAbsolutePosition(position.x, position.y, position.z);
 }
-
-void CarNode::draw()
+void Car::stopCar()
 {
-	mu.pushMatrix(gmu::MODEL);
-
-	mu.multMatrix(gmu::MODEL, localTransform);
-
-	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-	mu.computeNormalMatrix3x3();
-
-	for (auto& child : children) {
-		child->draw();
-	}
-
-	mu.popMatrix(gmu::MODEL);
-}
-
-void CarNode::stopCar()
-{
-	speed = 0.0f;
 	isAccelerating = false;
 	isDecelerating = false;
 	steering = 0.0f;
 }
 
-void CarNode::addChildren()
+void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
+{
+	// Push the car out of the collision
+	position += info.collisionNormal * info.penetrationDepth;
+
+	// Remove velocity going into the collision surface
+	float velocityIntoWall = Dot(velocity, info.collisionNormal);
+
+	if (velocityIntoWall > 0.0f)
+	{
+		velocity -= info.collisionNormal * velocityIntoWall;
+	}
+
+	collider->position = position;
+	carNode->setAbsolutePosition(position.x, position.y, position.z);
+}
+
+void Car::addChildren()
 {
 	MeshNode* carBody = new MeshNode(0, 2);
 	carBody->setTransform(
@@ -107,7 +139,7 @@ void CarNode::addChildren()
 		0.0f, 0.0f, 0.0f,
 		3.4f, 2.0f, 7.4f
 	);
-	this->addChild(carBody);
+	this->carNode->addChild(carBody);
 
 	MeshNode* carTop = new MeshNode(0, 2);
 	carTop->setTransform(
@@ -115,7 +147,7 @@ void CarNode::addChildren()
 		0.0f, 0.0f, 0.0f,
 		2.0f, 1.5f, 5.0f
 	);
-	this->addChild(carTop);
+	this->carNode->addChild(carTop);
 
 	MeshNode* wheel1 = new MeshNode(5, 3);
 	wheel1->setTransform(
@@ -123,7 +155,7 @@ void CarNode::addChildren()
 		0.0f, 0.0f, 90.0f,
 		0.7f, 0.7f, 0.7f
 	);
-	this->addChild(wheel1);
+	this->carNode->addChild(wheel1);
 
 	MeshNode* wheel2 = new MeshNode(5, 3);
 	wheel2->setTransform(
@@ -131,7 +163,7 @@ void CarNode::addChildren()
 		0.0f, 0.0f, 90.0f,
 		0.7f, 0.7f, 0.7f
 	);
-	this->addChild(wheel2);
+	this->carNode->addChild(wheel2);
 
 	MeshNode* wheel3 = new MeshNode(5, 3);
 	wheel3->setTransform(
@@ -139,7 +171,7 @@ void CarNode::addChildren()
 		0.0f, 0.0f, 90.0f,
 		0.7f, 0.7f, 0.7f
 	);
-	this->addChild(wheel3);
+	this->carNode->addChild(wheel3);
 
 	MeshNode* wheel4 = new MeshNode(5, 3);
 	wheel4->setTransform(
@@ -147,5 +179,5 @@ void CarNode::addChildren()
 		0.0f, 0.0f, 90.0f,
 		0.7f, 0.7f, 0.7f
 	);
-	this->addChild(wheel4);
+	this->carNode->addChild(wheel4);
 }
