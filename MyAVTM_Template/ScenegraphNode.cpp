@@ -126,3 +126,65 @@ void ScenegraphNode::setTransform(
 
 	mu.popMatrix(gmu::MODEL);
 }
+
+InstancedObjectNode::InstancedObjectNode(int meshId, int textureId, const std::vector<Vector3>& positions) : meshId(meshId), textureId(textureId), positions(positions)
+{
+	instanceCount = static_cast<int>(positions.size());
+
+	/*instance VBO*/
+	glGenBuffers(1, &instanceVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glBufferData(GL_ARRAY_BUFFER, instanceCount * sizeof(float) * 3, nullptr, GL_DYNAMIC_DRAW);
+
+	glBindVertexArray(renderer.myMeshes[meshId].vao);
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribDivisor(3, 1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void InstancedObjectNode::draw()
+{
+	mu.pushMatrix(gmu::MODEL);
+	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
+	mu.computeNormalMatrix3x3();
+
+	renderer.activateRenderMeshesShaderProg();
+
+	dataMesh data;
+	data.meshID = meshId;
+	data.texMode = textureId;
+	data.vm = mu.get(gmu::VIEW_MODEL);
+	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
+	data.normal = mu.getNormalMatrix();
+
+	renderer.renderMeshInstanced(data, instanceCount);
+
+	mu.popMatrix(gmu::MODEL);
+}
+
+void InstancedObjectNode::updateInstances()
+{
+	std::vector<float> instancePositions;
+	instancePositions.reserve(positions.size() * 3);
+
+	for (const Vector3& pos : positions)
+	{
+		instancePositions.push_back(pos.x);
+		instancePositions.push_back(pos.y);
+		instancePositions.push_back(pos.z);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+
+	glBufferSubData(
+		GL_ARRAY_BUFFER,
+		0,
+		instancePositions.size() * sizeof(float),
+		instancePositions.data()
+	);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}

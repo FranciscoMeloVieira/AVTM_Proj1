@@ -13,10 +13,10 @@ class OrangesManager {
 public:
 	OrangesManager(int meshId, int textureId);
 	~OrangesManager();
-	void draw();
 	void update(float deltaTime);
 	void uploadInstanceData();
 	int numOranges = 30;
+	InstancedObjectNode* orangesNode = nullptr;
 	std::vector<Orange> oranges;
 
 private:

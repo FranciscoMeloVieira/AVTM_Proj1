@@ -197,8 +197,6 @@ void renderSim(void) {
 
 	// ===== RENDER SCENEGRAPH =====
 	sceneRoot->draw();
-	orangesManager->draw();
-	cheriosManager->draw();
 
 	// ===== RENDER TEXT =====
 	if (fontLoaded) {
@@ -431,6 +429,8 @@ void buildSceneGraph() {
 	collisionManager = new CollisionDetector();
 	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); 
 	sceneRoot->addChild(carnode->carNode);
+	sceneRoot->addChild(orangesManager->orangesNode);
+	sceneRoot->addChild(cheriosManager->cheeriosNode);
 
 	collisionManager->AddGameObject(carnode);
 	for (int i = 0; i < orangesManager->numOranges; i++) {

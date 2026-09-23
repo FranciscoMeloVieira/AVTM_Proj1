@@ -8,6 +8,7 @@ extern gmu mu;
 OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_textureId(textureId)
 {
 	oranges.resize(numOranges);
+	std::vector<Vector3> positions;
 	for (Orange& orange : oranges)
 	{
 		orange.position = {
@@ -24,50 +25,17 @@ OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_
 		orange.mass = 1.0f;
 
 		spawnOrange(orange);
+		positions.push_back(orange.position);
 	}
 
-
-	/*instance VBO*/
-	glGenBuffers(1, &instanceVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, numOranges * sizeof(float) * 3, nullptr, GL_DYNAMIC_DRAW);
-
-	glBindVertexArray(renderer.myMeshes[m_meshId].vao);
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glVertexAttribDivisor(3, 1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// Create the InstancedObjectNode for rendering
+	orangesNode = new InstancedObjectNode(m_meshId, m_textureId, positions);
 }
 
-OrangesManager::~OrangesManager() {
-	if (instanceVBO != 0) {
-		glDeleteBuffers(1, &instanceVBO);
-	}
-}
-
-void OrangesManager::draw() {
-	mu.pushMatrix(gmu::MODEL);
-	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-	mu.computeNormalMatrix3x3();
-
-	renderer.activateRenderMeshesShaderProg();
-
-	dataMesh data;
-	data.meshID = m_meshId;
-	data.texMode = m_textureId;
-	data.vm = mu.get(gmu::VIEW_MODEL);
-	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
-	data.normal = mu.getNormalMatrix();
-
-	renderer.renderMeshInstanced(data, numOranges);
-
-	mu.popMatrix(gmu::MODEL);
-}
 
 void OrangesManager::update(float deltaTime)
 {
+	std::vector<Vector3> positions;
 	for (Orange& orange : oranges)
 	{
 		// Physics
@@ -84,34 +52,11 @@ void OrangesManager::update(float deltaTime)
 		{
 			spawnOrange(orange);
 		}
+		positions.push_back(orange.position);
 	}
-
-	uploadInstanceData();
+	orangesNode->setPositions(positions);
 }
 
-void OrangesManager::uploadInstanceData()
-{
-	std::vector<float> instancePositions;
-	instancePositions.reserve(oranges.size() * 3);
-
-	for (const Orange& orange : oranges)
-	{
-		instancePositions.push_back(orange.position.x);
-		instancePositions.push_back(orange.position.y);
-		instancePositions.push_back(orange.position.z);
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-
-	glBufferSubData(
-		GL_ARRAY_BUFFER,
-		0,
-		instancePositions.size() * sizeof(float),
-		instancePositions.data()
-	);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
 
 void OrangesManager::spawnOrange(Orange& orange)
 {
