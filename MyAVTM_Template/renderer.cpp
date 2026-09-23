@@ -154,6 +154,7 @@ bool Renderer::setRenderMeshesShaderProg(const std::string& vertShaderPath, cons
     tex_loc[0] = glGetUniformLocation(program, "texmap");
     tex_loc[1] = glGetUniformLocation(program, "texmap1");
     tex_loc[2] = glGetUniformLocation(program, "texmap2");
+	tex_loc[3] = glGetUniformLocation(program, "texmap3");
 
     return(shader.isProgramLinked() && shader.isProgramValid());
 }
@@ -246,7 +247,12 @@ void Renderer::renderMesh(const dataMesh& data) {
     // Render mesh
     glUniform1i(texMode_loc, data.texMode);
 
+
+
     glBindVertexArray(myMeshes[data.meshID].vao);
+    glDisableVertexAttribArray(3);
+    glVertexAttrib3f(3, 0.0f, 0.0f, 0.0f);
+
     glDrawElements(myMeshes[data.meshID].type, myMeshes[data.meshID].numIndexes, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
@@ -303,3 +309,27 @@ void Renderer::renderText(const TextCommand& text) {
 }
 
 
+void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) {
+    glUniformMatrix4fv(vm_loc, 1, GL_FALSE, data.vm);
+    glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, data.pvm);
+    glUniformMatrix3fv(normal_loc, 1, GL_FALSE, data.normal);
+
+    GLint loc = glGetUniformLocation(program, "mat.ambient");
+    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.ambient);
+    loc = glGetUniformLocation(program, "mat.diffuse");
+    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.diffuse);
+    loc = glGetUniformLocation(program, "mat.specular");
+    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.specular);
+    loc = glGetUniformLocation(program, "mat.shininess");
+    glUniform1f(loc, myMeshes[data.meshID].mat.shininess);
+
+    glUniform1i(texMode_loc, data.texMode);
+
+    glBindVertexArray(myMeshes[data.meshID].vao);
+    glDrawElementsInstanced(myMeshes[data.meshID].type,
+        myMeshes[data.meshID].numIndexes,
+        GL_UNSIGNED_INT,
+        nullptr,
+        instanceCount);
+    glBindVertexArray(0);
+}

@@ -31,6 +31,17 @@
 #include "mathUtility.h"
 #include "model.h"
 #include "texture.h"
+#include <ScenegraphNode.h>
+
+/*TODO*/
+#include "Car.hpp"
+#include "OrangeManager.hpp"
+#include "Camera.hpp"
+#include "CameraFixedPerspective.hpp"
+#include "CameraFixedOrtho.hpp"
+#include "CheriosManager.hpp"
+#include "CollisionDetector.h"
+#include "Butter.h"
 
 using namespace std;
 
@@ -39,6 +50,17 @@ int WindowHandle = 0;
 int WinX = 640, WinY = 480;
 
 unsigned int FrameCount = 0;
+
+/*TODO - make better pls*/
+CollisionDetector* collisionManager = nullptr;
+Car* carnode = nullptr;
+OrangesManager* orangesManager = nullptr;
+CheeriosManager* cheriosManager = nullptr;
+Camera* camera1 = nullptr;
+Camera* camera2 = nullptr;
+Camera* camera3 = nullptr;
+
+Camera* activeCamera = nullptr;
 
 //File with the font
 const string fontPathFile = "fonts/arial.ttf";
@@ -49,11 +71,11 @@ gmu mu;
 //Object of class renderer to manage the rendering of meshes and ttf-based bitmap text
 Renderer renderer;
 	
-// Camera Position
-float camX, camY, camZ;
+// Camera Position (initialize to same defaults as Camera)
+float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
 
 // Camera Spherical Coordinates
-float alpha = 57.0f, _beta = 18.0f;
+float alpha = 180.0f, _beta = 45.0f;
 float r = 45.0f;
 
 // Mouse Tracking Variables
@@ -72,6 +94,12 @@ bool spotlight_mode = false;
 float coneDir[4] = { 0.0f, -0.0f, -1.0f, 0.0f };
 
 bool fontLoaded = false;
+
+// Global scene graph
+static EmptyNode* sceneRoot = nullptr;
+
+bool paused = false;
+
 
 /// ::::::::::::::::::::::::::::::::::::::::::::::::CALLBACK FUNCIONS:::::::::::::::::::::::::::::::::::::::::::::::::://///
 
@@ -99,7 +127,8 @@ void refresh(int value)
 //
 
 void changeSize(int w, int h) {
-
+	WinX = w;
+	WinY = h;
 	float ratio;
 	// Prevent a divide by zero, when window is too short
 	if(h == 0)
@@ -109,7 +138,7 @@ void changeSize(int w, int h) {
 	// set the projection matrix
 	ratio = (1.0f * w) / h;
 	mu.loadIdentity(gmu::PROJECTION);
-	mu.perspective(53.13f, ratio, 0.1f, 1000.0f);
+	activeCamera->loadProjectionMatrix(mu, ratio);
 }
 
 
@@ -117,92 +146,68 @@ void changeSize(int w, int h) {
 //
 // Render stufff
 //
+int lastTime = 0;
 
+
+// ============================================================================
+// Render the scene and UI
+// ============================================================================
 void renderSim(void) {
+	if (paused == true) {
+		glutPostRedisplay();
+		lastTime = glutGet(GLUT_ELAPSED_TIME);
+		return;
+	}
+	int currentTime = glutGet(GLUT_ELAPSED_TIME);
+	float deltaTime = (currentTime - lastTime) / 1000.0f;
+	lastTime = currentTime;
+	carnode->update(deltaTime);
+	orangesManager->update(deltaTime);
+	cheriosManager->update(deltaTime);
+	collisionManager->updateCollisions();
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
 
+	if (activeCamera == camera3) {
+		float* carPos = carnode->carNode->getLocalModelMatrix();
+		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
+		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
+		activeCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
+	}
+	activeCamera->applyViewMatrix(mu);
+
 	//Associar os Texture Units aos Objects Texture
 	//stone.tga loaded in TU0; checker.tga loaded in TU1;  lightwood.tga loaded in TU2
 	renderer.setTexUnit(0, 0);
 	renderer.setTexUnit(1, 1);
 	renderer.setTexUnit(2, 2);
+	renderer.setTexUnit(3, 3);
 
 	// load identity matrices
-	mu.loadIdentity(gmu::VIEW);
 	mu.loadIdentity(gmu::MODEL);
-	// set the camera using a function similar to gluLookAt
-	mu.lookAt(camX, camY, camZ, 0, 0, 0, 0, 1, 0);
-
 	//send the light position in eye coordinates
-	renderer.setLightPos(lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
-
-	//float lposAux[4];
-	//mu.multMatrixPoint(gmu::VIEW, lightPos, lposAux);   //lightPos definido em World Coord so is converted to eye space
-	//renderer.setLightPos(lposAux);
+	renderer.setLightPos(lightPos);
 
 	//Spotlight settings
 	renderer.setSpotLightMode(spotlight_mode);
 	renderer.setSpotParam(coneDir, 0.93);
 
-	dataMesh data;
-	
-	// Draw the floor - myMeshes[0] contains the cube object
-	mu.pushMatrix(gmu::MODEL);
-	mu.translate(gmu::MODEL, 0.0f, -1.15f, 0.0f);
-	mu.scale(gmu::MODEL, 30.0f, 0.1f, 30.0f);
-	mu.translate(gmu::MODEL, -0.5f, -0.5f, -0.5f); //centrar o cubo na origem
+	// ===== RENDER SCENEGRAPH =====
+	sceneRoot->draw();
+	orangesManager->draw();
+	cheriosManager->draw();
 
-	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-	mu.computeNormalMatrix3x3();
-
-	data.meshID = 0;
-	data.texMode = 1; //modulate diffuse color with texel color
-	data.vm = mu.get(gmu::VIEW_MODEL),
-	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
-	data.normal = mu.getNormalMatrix();
-	renderer.renderMesh(data);
-	mu.popMatrix(gmu::MODEL);
-
-	//Draw the other objects
-	int objId = 0; //id of the current object mesh - to be used as index of the array Mymeshes in the renderer object
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			mu.pushMatrix(gmu::MODEL);
-			mu.translate(gmu::MODEL, (float)i * 3.7f, 0.0f, (float)j * 3.7f);
-
-			mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-			mu.computeNormalMatrix3x3();
-
-			data.meshID = objId;
-			data.texMode = i;   //0:no texturing; 1:modulate diffuse color with texel color; 2:diffuse color is replaced by texel color; 3: multitexturing
-			data.vm = mu.get(gmu::VIEW_MODEL),
-			data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
-			data.normal = mu.getNormalMatrix();
-			renderer.renderMesh(data);
-
-			mu.popMatrix(gmu::MODEL);
-			objId = (objId + 1) % 6;
-		}
-	}
-
-	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
-	//Each glyph quad texture needs just one byte color channel: 0 in background and 1 for the actual character pixels. Use it for alpha blending
-	//text to be rendered in last place to be in front of everything
-	
-	if(fontLoaded) {
+	// ===== RENDER TEXT =====
+	if (fontLoaded) {
 		glDisable(GL_DEPTH_TEST);
 		TextCommand textCmd = { "AVTM 2026 Welcome:\nGood Luck!", {100, 100}, 0.5 };
-		//the glyph contains transparent background colors and non-transparent for the actual character pixels. So we use the blending
-		glEnable(GL_BLEND);  
+		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		int m_viewport[4];
 		glGetIntegerv(GL_VIEWPORT, m_viewport);
-
-		//viewer at origin looking down at  negative z direction
 
 		mu.loadIdentity(gmu::MODEL);
 		mu.loadIdentity(gmu::VIEW);
@@ -215,9 +220,8 @@ void renderSim(void) {
 		mu.popMatrix(gmu::PROJECTION);
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
-		
 	}
-	
+
 	glutSwapBuffers();
 }
 
@@ -225,6 +229,22 @@ void renderSim(void) {
 //
 // Events from the Keyboard
 //
+
+void processKeysUp(unsigned char key, int xx, int yy)
+{
+	switch (key) {
+	case 'a':
+	case 'd':
+		carnode->steering = 0.0f;
+		break;
+	case 'w':
+		carnode->isAccelerating = false;
+		break;
+	case 's':
+		carnode->isDecelerating = false;
+		break;
+	}
+}
 
 void processKeys(unsigned char key, int xx, int yy)
 {
@@ -259,6 +279,35 @@ void processKeys(unsigned char key, int xx, int yy)
 
 		case 'm': glEnable(GL_MULTISAMPLE); break;
 		case 'n': glDisable(GL_MULTISAMPLE); break;
+
+		case 'w':
+			carnode->isAccelerating = true;
+			break;
+		case 's':
+			carnode->isDecelerating = true;
+			break;
+		case 'a':
+			carnode->steering = 1.0f;
+			break;
+		case 'd':
+			carnode->steering = -1.0f;
+			break;
+
+		case '1':
+			activeCamera = camera1;
+			changeSize(WinX, WinY);
+			break;
+		case '2':
+			activeCamera = camera2;
+			changeSize(WinX, WinY);
+			break;
+		case '3':
+			activeCamera = camera3;
+			changeSize(WinX, WinY);
+			break;
+		case 'p':
+			paused = !paused;
+			break;
 	}
 }
 
@@ -329,11 +378,14 @@ void processMouseMotion(int xx, int yy)
 		if (rAux < 0.1f)
 			rAux = 0.1f;
 	}
+	if (activeCamera == camera3)
+	{
+		camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
+		camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
+		camY = rAux * sin(betaAux * 3.14f / 180.0f);
 
-	camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	camY = rAux *   						       sin(betaAux * 3.14f / 180.0f);
-
+	}
+	
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
 }
@@ -358,12 +410,127 @@ void mouseWheel(int wheel, int direction, int x, int y) {
 // Scene building with basic geometry
 //
 
+// ============================================================================
+// Build the scene graph
+// ============================================================================
+void buildSceneGraph() {
+	if (sceneRoot != nullptr) return;  // Already built
+
+	// Create root node (empty, just a container)
+	sceneRoot = new EmptyNode();
+
+	// Create and add floor
+	MeshNode* floor = new MeshNode(0, 4);  // meshID=0, texMode=1
+	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
+	floor->setScale(400.0f, 0.1f, 400.0f);
+	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
+	sceneRoot->addChild(floor);
+
+	orangesManager = new OrangesManager(2, 3);
+	cheriosManager = new CheeriosManager(5, 1, 12.0f);
+	collisionManager = new CollisionDetector();
+	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); 
+	sceneRoot->addChild(carnode->carNode);
+
+	collisionManager->AddGameObject(carnode);
+	for (int i = 0; i < orangesManager->numOranges; i++) {
+		collisionManager->AddGameObject(&orangesManager->oranges[i]);
+	}
+	for (int i = 0; i < cheriosManager->cheerios.size(); i++) {
+		collisionManager->AddGameObject(&cheriosManager->cheerios[i]);
+	}
+
+	/*TODO - Maybe change location*/
+	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);
+	camera2 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
+	camera3 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
+	activeCamera = camera1;
+
+	EmptyNode* racetrack = new EmptyNode();
+	sceneRoot->addChild(racetrack);
+
+	MeshNode* trackSegment = new MeshNode(0, 0); 
+	trackSegment->setTransform(
+		0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 200.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);  // Center cube at origin
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		81.0f, 0.0f, 94.0f,
+		0.0f, 0.0f, 0.0f,
+		150.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		150.0f, 0.0f, 63.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 50.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		94.0f, 0.0f, 44.0f,
+		0.0f, 0.0f, 0.0f,
+		100.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		50.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 75.7f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		94.0f, 0.0f, -32.0f,
+		0.0f, 0.0f, 0.0f,
+		76.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		126.0f, 0.0f, -69.0f,
+		0.0f, 0.0f, 0.0f,
+		12.0f, 1.0f, 62.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	trackSegment = new MeshNode(0, 0);
+	trackSegment->setTransform(
+		63.4f, 0.0f, -94.0f,
+		0.0f, 0.0f, 0.0f,
+		116.0f, 1.0f, 12.0f);
+	trackSegment->translate(-0.5f, -0.5f, -0.5f);
+	racetrack->addChild(trackSegment);
+
+	racetrack->setScale(2.0f, 0.1f, 2.0f);
+
+	Butter* butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
+	sceneRoot->addChild(butter->butterNode);
+	collisionManager->AddGameObject(butter);
+}
+
+//
+// Build the scene with meshes and textures
+//
+
 void buildScene()
 {
 	//Texture Object definition
 	renderer.TexObjArray.texture2D_Loader("assets/stone.tga");
 	renderer.TexObjArray.texture2D_Loader("assets/checker.png");
 	renderer.TexObjArray.texture2D_Loader("assets/lightwood.tga");
+	renderer.TexObjArray.texture2D_Loader("assets/orange.png");
 
 	//Scene geometry with triangle meshes
 
@@ -441,6 +608,8 @@ void buildScene()
 	amesh.mat.texCount = texcount;
 	renderer.myMeshes.push_back(amesh);
 
+	buildSceneGraph();
+
 	//The truetypeInit creates a texture object in TexObjArray for storing the fontAtlasTexture
 	
 	fontLoaded = renderer.truetypeInit(fontPathFile);
@@ -455,6 +624,8 @@ void buildScene()
 	camX = r * sin(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 	camY = r * sin(_beta * 3.14f / 180.0f);
+
+
 }
 
 // ------------------------------------------------------------
@@ -486,6 +657,8 @@ int main(int argc, char **argv) {
 
 //	Mouse and Keyboard Callbacks
 	glutKeyboardFunc(processKeys);
+	/*For when keys are released to stop */
+	glutKeyboardUpFunc(processKeysUp);
 	glutMouseFunc(processMouseButtons);
 	glutMotionFunc(processMouseMotion);
 	glutMouseWheelFunc ( mouseWheel ) ;
@@ -528,6 +701,8 @@ int main(int argc, char **argv) {
 
 	return(0);
 }
+
+
 
 
 
