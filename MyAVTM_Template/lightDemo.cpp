@@ -294,6 +294,8 @@ void renderSim(void) {
 	renderer.setTexUnit(1, 1);
 	renderer.setTexUnit(2, 2);
 	renderer.setTexUnit(3, 3);
+	renderer.setTexUnit(4, 4);
+	renderer.setTexUnit(5, 5);
 
 	// load identity matrices
 	mu.loadIdentity(gmu::MODEL);
@@ -530,7 +532,7 @@ void buildSceneGraph() {
 	sceneRoot = new EmptyNode();
 
 	// Create and add floor
-	MeshNode* floor = new MeshNode(0, 4);  // meshID=0, texMode=1
+	MeshNode* floor = new MeshNode(0, 6);  // meshID=0, texMode=1
 	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
 	floor->setScale(400.0f, 0.1f, 400.0f);
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
@@ -559,7 +561,7 @@ void buildSceneGraph() {
 	EmptyNode* racetrack = new EmptyNode();
 	sceneRoot->addChild(racetrack);
 
-	MeshNode* trackSegment = new MeshNode(0, 0); 
+	MeshNode* trackSegment = new MeshNode(0, 4); 
 	trackSegment->setTransform(
 		0.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f,
@@ -567,7 +569,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);  // Center cube at origin
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		81.0f, 0.0f, 94.0f,
 		0.0f, 0.0f, 0.0f,
@@ -575,7 +577,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		150.0f, 0.0f, 63.0f,
 		0.0f, 0.0f, 0.0f,
@@ -583,7 +585,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		94.0f, 0.0f, 44.0f,
 		0.0f, 0.0f, 0.0f,
@@ -591,7 +593,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		50.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f,
@@ -599,7 +601,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		94.0f, 0.0f, -32.0f,
 		0.0f, 0.0f, 0.0f,
@@ -607,7 +609,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		126.0f, 0.0f, -69.0f,
 		0.0f, 0.0f, 0.0f,
@@ -615,7 +617,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		63.4f, 0.0f, -94.0f,
 		0.0f, 0.0f, 0.0f,
@@ -641,21 +643,23 @@ void buildScene()
 	renderer.TexObjArray.texture2D_Loader("assets/checker.png");
 	renderer.TexObjArray.texture2D_Loader("assets/lightwood.tga");
 	renderer.TexObjArray.texture2D_Loader("assets/orange.png");
+	renderer.TexObjArray.texture2D_Loader("assets/road.jpg");
+	renderer.TexObjArray.texture2D_Loader("assets/Tire.png");
 
 	//Scene geometry with triangle meshes
 
 	MyMesh amesh;
 
-	float amb[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float diff[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-	float spec[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	float amb[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	float diff[] = { 0.6f, 0.6f, 0.6f, 1.0f }; 
+	float spec[] = { 0.15f, 0.15f, 0.15f, 1.0f }; 
 
-	float amb1[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float diff1[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-	float spec1[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+	float amb1[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	float diff1[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+	float spec1[] = { 0.15f, 0.15f, 0.15f, 1.0f }; 
 
 	float emissive[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float shininess = 100.0f;
+	float shininess = 10.0f; 
 	int texcount = 0;
 
 	// create geometry and VAO of the cube
@@ -785,7 +789,7 @@ int main(int argc, char **argv) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 	printf ("Vendor: %s\n", glGetString (GL_VENDOR));
 	printf ("Renderer: %s\n", glGetString (GL_RENDERER));

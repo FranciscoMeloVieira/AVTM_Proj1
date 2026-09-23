@@ -36,6 +36,8 @@ uniform sampler2D texmap;
 uniform sampler2D texmap1;
 uniform sampler2D texmap2;
 uniform sampler2D texmap3;
+uniform sampler2D texmap4;
+uniform sampler2D texmap5; 
 
 uniform int texMode;
 uniform bool spotlight_mode;
@@ -92,6 +94,12 @@ void main() {
         colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
     } else if (texMode == 3) {
         texel = texture(texmap3, DataIn.tex_coord / 2.0);
+        colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
+    } else if (texMode == 4) {
+        texel = texture(texmap4, DataIn.tex_coord / 2.0);
+        colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
+    } else if (texMode == 5) {
+    texel = texture(texmap5, DataIn.tex_coord / 2.0);
         colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
     } else {
         texel = texture(texmap2, DataIn.tex_coord);

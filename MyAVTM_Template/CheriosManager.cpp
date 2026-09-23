@@ -134,9 +134,9 @@ void CheeriosManager::update(float deltaTime) {
 		cheerio.collider->position = cheerio.position;
 	}*/
 
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+   /* glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     glBufferData(GL_ARRAY_BUFFER, cheerios.size() * sizeof(Vector3), nullptr, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 }
 
 void Cheerio::OnCollision(const GameObject& other, const CollisionInfo& info)
