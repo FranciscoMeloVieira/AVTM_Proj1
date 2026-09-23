@@ -55,7 +55,7 @@ unsigned int FrameCount = 0;
 CollisionDetector* collisionManager = nullptr;
 Car* carnode = nullptr;
 OrangesManager* orangesManager = nullptr;
-CheriosManager* cheriosManager = nullptr;
+CheeriosManager* cheriosManager = nullptr;
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
@@ -192,6 +192,7 @@ void renderSim(void) {
 	// ===== RENDER SCENEGRAPH =====
 	sceneRoot->draw();
 	orangesManager->draw();
+	cheriosManager->draw();
 
 	// ===== RENDER TEXT =====
 	if (fontLoaded) {
@@ -417,15 +418,17 @@ void buildSceneGraph() {
 	sceneRoot->addChild(floor);
 
 	orangesManager = new OrangesManager(2, 3);
-	cheriosManager = new CheriosManager(5, 1, 12.0f);
+	cheriosManager = new CheeriosManager(5, 1, 12.0f);
 	collisionManager = new CollisionDetector();
 	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); 
-	sceneRoot->addChild(cheriosManager);
 	sceneRoot->addChild(carnode->carNode);
 
 	collisionManager->AddGameObject(carnode);
 	for (int i = 0; i < orangesManager->numOranges; i++) {
 		collisionManager->AddGameObject(&orangesManager->oranges[i]);
+	}
+	for (int i = 0; i < cheriosManager->cheerios.size(); i++) {
+		collisionManager->AddGameObject(&cheriosManager->cheerios[i]);
 	}
 
 	/*TODO - Maybe change location*/

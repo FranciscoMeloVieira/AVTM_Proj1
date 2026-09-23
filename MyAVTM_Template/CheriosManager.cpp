@@ -2,11 +2,12 @@
 #include "renderer.h"
 #include <cmath>
 #include <stdio.h>
+#include <iostream>
 
 extern Renderer renderer;
 extern gmu mu;
 
-CheriosManager::CheriosManager(int meshId, int textureId, float spacing)
+CheeriosManager::CheeriosManager(int meshId, int textureId, float spacing)
     : m_meshId(meshId), m_textureId(textureId)
 {
     buildTrackBorders();
@@ -15,7 +16,13 @@ CheriosManager::CheriosManager(int meshId, int textureId, float spacing)
     // Setup Instance VBO
     glGenBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, torusPositions.size() * sizeof(Vector3), torusPositions.data(), GL_DYNAMIC_DRAW);
+
+	Vector3* instancePositions = new Vector3[cheerios.size()];
+	for (size_t i = 0; i < cheerios.size(); ++i) {
+		instancePositions[i] = cheerios[i].position;
+	}
+
+    glBufferData(GL_ARRAY_BUFFER, cheerios.size() * sizeof(Vector3), instancePositions, GL_DYNAMIC_DRAW);
 
     glBindVertexArray(renderer.myMeshes[m_meshId].vao);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -27,13 +34,13 @@ CheriosManager::CheriosManager(int meshId, int textureId, float spacing)
     glBindVertexArray(0);
 }
 
-CheriosManager::~CheriosManager() {
+CheeriosManager::~CheeriosManager() {
     if (instanceVBO != 0) {
         glDeleteBuffers(1, &instanceVBO);
     }
 }
 
-void CheriosManager::addBorderLine(float x1, float z1, float x2, float z2, float spacing) {
+void CheeriosManager::addBorderLine(float x1, float z1, float x2, float z2, float spacing) {
     float dx = x2 - x1;
     float dz = z2 - z1;
     float length = std::sqrt(dx * dx + dz * dz);
@@ -46,11 +53,20 @@ void CheriosManager::addBorderLine(float x1, float z1, float x2, float z2, float
 
     for (int i = 0; i <= count; ++i) {
         float t = static_cast<float>(i) / count;
-        torusPositions.push_back({ x1 + t * dx, 2.0f, z1 + t * dz });
+		Cheerio cheerio;
+		cheerio.position.x = x1 + t * dx;
+		cheerio.position.y = 3.0f; // Fixed height
+		cheerio.position.z = z1 + t * dz;
+		cheerio.collider = new Collider();
+		cheerio.collider->position = cheerio.position;
+		cheerio.collider->max = { 1.0f, 1.0f, 1.0f };
+		cheerio.collider->min = { -1.0f, -1.0f, -1.0f };
+		cheerio.mass = 1.0f;
+		cheerios.push_back(cheerio);
     }
 }
 
-void CheriosManager::buildTrackBorders() {
+void CheeriosManager::buildTrackBorders() {
     float spacing = 6.0f;
 
     struct Line {
@@ -82,12 +98,12 @@ void CheriosManager::buildTrackBorders() {
     }
 }
 
-void CheriosManager::draw() {
+void CheeriosManager::draw() {
 
     glBindVertexArray(renderer.myMeshes[m_meshId].vao);
     glEnableVertexAttribArray(3);
 
-    if (torusPositions.empty()) return;
+    if (cheerios.empty()) return;
 
     mu.pushMatrix(gmu::MODEL);
 
@@ -105,16 +121,25 @@ void CheriosManager::draw() {
     data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
     data.normal = mu.getNormalMatrix();
 
-    renderer.renderMeshInstanced(data, static_cast<int>(torusPositions.size()));
+    renderer.renderMeshInstanced(data, static_cast<int>(cheerios.size()));
 
     mu.popMatrix(gmu::MODEL);
 }
 
-void CheriosManager::update(float deltaTime) {
-    if (torusPositions.empty()) return;
+void CheeriosManager::update(float deltaTime) {
+    if (cheerios.empty()) return;
+
+	/*for (Cheerio& cheerio : cheerios) {
+		cheerio.position += cheerio.velocity * deltaTime;
+		cheerio.collider->position = cheerio.position;
+	}*/
 
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, torusPositions.size() * sizeof(Vector3), torusPositions.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cheerios.size() * sizeof(Vector3), nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void Cheerio::OnCollision(const GameObject& other, const CollisionInfo& info)
+{
+	std::cout << "Cheerio collided with another object!" << std::endl;
+}

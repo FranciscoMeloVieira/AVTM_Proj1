@@ -3,8 +3,15 @@
 #include <GL/glew.h>
 #include <vector>
 #include "Vector3.h"
+#include "GameObject.h"
 
-class CheriosManager : public ScenegraphNode {
+
+class Cheerio : public PhysicsObject {
+public: 
+    void OnCollision(const GameObject& other, const CollisionInfo& info) override;
+};
+
+class CheeriosManager {
 private:
     int m_meshId;
     int m_textureId;
@@ -14,9 +21,9 @@ private:
     void buildTrackBorders();
 
 public:
-    CheriosManager(int meshId, int textureId, float spacing = 10.0f);
-    ~CheriosManager();
-    std::vector<Vector3> torusPositions;
+    CheeriosManager(int meshId, int textureId, float spacing = 10.0f);
+    ~CheeriosManager();
+	std::vector<Cheerio> cheerios;
 
     void draw();
     void update(float deltaTime);
