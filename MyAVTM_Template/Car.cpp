@@ -5,6 +5,7 @@
 #include "renderer.h"
 
 #include <iostream>
+#include <OrangeManager.hpp>
 
 extern gmu mu;
 
@@ -116,6 +117,13 @@ void Car::stopCar()
 
 void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
+	if (const Orange* orange = dynamic_cast<const Orange*>(&other))
+	{
+		velocity = { 0.0f, 0.0f, 0.0f };
+		acceleration = { 0.0f, 0.0f, 0.0f };
+		position = { 0.0f, 0.0f, 0.0f };
+		collider->position = position;
+	}
 	// Push the car out of the collision
 	position += info.collisionNormal * info.penetrationDepth;
 
