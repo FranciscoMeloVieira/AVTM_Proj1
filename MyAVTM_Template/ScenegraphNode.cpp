@@ -134,7 +134,7 @@ InstancedObjectNode::InstancedObjectNode(int meshId, int textureId, const std::v
 	/*instance VBO*/
 	glGenBuffers(1, &instanceVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, instanceCount * sizeof(float) * 3, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, instanceCount * sizeof(float) * 3, positions.data(), GL_DYNAMIC_DRAW);
 
 	glBindVertexArray(renderer.myMeshes[meshId].vao);
 	glEnableVertexAttribArray(3);
