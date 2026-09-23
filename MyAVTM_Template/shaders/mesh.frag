@@ -90,4 +90,10 @@ void main() {
 		texel1 = texture(texmap, DataIn.tex_coord);  // texel from checker.tga
 		colorOut = vec4(max(intensity*texel*texel1 + spec, 0.07*texel*texel1).rgb, 1.0);
 	}
+	float dist = length(DataIn.eye);
+	float fogStart = 50.0;
+	float fogEnd = 350.0;
+	float fogAmount = clamp((fogEnd - dist) / (fogEnd - fogStart), 0.0, 1.0);
+	vec3 fogColor = vec3(0.6,0.6,0.6);
+	colorOut = vec4(mix(fogColor, colorOut.rgb, fogAmount ), 1.0);
 }
