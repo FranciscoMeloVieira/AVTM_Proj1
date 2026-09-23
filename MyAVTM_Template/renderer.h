@@ -62,6 +62,8 @@ public:
 
   void renderMeshInstanced(const dataMesh& data, GLsizei instanceCount);
 
+  GLuint getMeshShaderProg();
+
   //Vector with meshes
   std::vector<struct MyMesh> myMeshes;
 

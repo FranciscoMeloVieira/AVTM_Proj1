@@ -333,3 +333,5 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
         instanceCount);
     glBindVertexArray(0);
 }
+
+GLuint Renderer::getMeshShaderProg() { return program; }
