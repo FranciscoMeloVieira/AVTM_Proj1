@@ -24,8 +24,6 @@ Car::Car(int meshId, int textureId,
 	collider->min = { -5.0f, -5.0f, -5.0f };
 }
 
-
-
 void Car::update(float deltaTime)
 {
 	acceleration = { 0.0f, 0.0f, 0.0f };

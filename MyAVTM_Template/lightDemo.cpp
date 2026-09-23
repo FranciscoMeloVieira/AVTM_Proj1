@@ -98,6 +98,8 @@ bool fontLoaded = false;
 // Global scene graph
 static EmptyNode* sceneRoot = nullptr;
 
+bool paused = false;
+
 
 /// ::::::::::::::::::::::::::::::::::::::::::::::::CALLBACK FUNCIONS:::::::::::::::::::::::::::::::::::::::::::::::::://///
 
@@ -151,7 +153,11 @@ int lastTime = 0;
 // Render the scene and UI
 // ============================================================================
 void renderSim(void) {
-
+	if (paused == true) {
+		glutPostRedisplay();
+		lastTime = glutGet(GLUT_ELAPSED_TIME);
+		return;
+	}
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
@@ -298,6 +304,9 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '3':
 			activeCamera = camera3;
 			changeSize(WinX, WinY);
+			break;
+		case 'p':
+			paused = !paused;
 			break;
 	}
 }
