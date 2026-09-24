@@ -83,15 +83,15 @@ private:
 class InstancedObjectNode : public ScenegraphNode
 {
 public:
-	InstancedObjectNode(int meshId, int textureId, const std::vector<Vector3>& positions);
+	InstancedObjectNode(int meshId, int textureId, const std::vector<std::pair<Vector3, Vector3>>& positions);
 	void draw() override;
 
-	void setPositions(const std::vector<Vector3>& newPositions) { positions = newPositions; instanceCount = static_cast<int>(positions.size()); updateInstances(); }
+	void setPositions(const std::vector<std::pair<Vector3, Vector3>>& newPositions) { positions = newPositions; instanceCount = static_cast<int>(positions.size()); updateInstances(); }
 
 private:
 	GLuint instanceVBO;
 
-	std::vector<Vector3> positions;
+	std::vector<std::pair<Vector3, Vector3>> positions;
 	int instanceCount;
 
 	int meshId;

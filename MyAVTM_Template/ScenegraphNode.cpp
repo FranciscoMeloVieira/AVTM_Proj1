@@ -94,7 +94,8 @@ void MeshNode::draw() {
 	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
 	data.normal = mu.getNormalMatrix();
 
-	renderer.renderMesh(data);
+	if (isVisible)
+		renderer.renderMesh(data);
 
 	for (auto& child : children) {
 		child->draw();
@@ -127,19 +128,22 @@ void ScenegraphNode::setTransform(
 	mu.popMatrix(gmu::MODEL);
 }
 
-InstancedObjectNode::InstancedObjectNode(int meshId, int textureId, const std::vector<Vector3>& positions) : meshId(meshId), textureId(textureId), positions(positions)
+InstancedObjectNode::InstancedObjectNode(int meshId, int textureId, const std::vector<std::pair<Vector3, Vector3>>& positions) : meshId(meshId), textureId(textureId), positions(positions)
 {
 	instanceCount = static_cast<int>(positions.size());
 
 	/*instance VBO*/
 	glGenBuffers(1, &instanceVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, instanceCount * sizeof(float) * 3, positions.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, instanceCount * sizeof(float) * 6, positions.data(), GL_DYNAMIC_DRAW);
 
 	glBindVertexArray(renderer.myMeshes[meshId].vao);
 	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glVertexAttribDivisor(3, 1);
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribDivisor(4, 1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -160,7 +164,8 @@ void InstancedObjectNode::draw()
 	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
 	data.normal = mu.getNormalMatrix();
 
-	renderer.renderMeshInstanced(data, instanceCount);
+	if (isVisible)
+		renderer.renderMeshInstanced(data, instanceCount);
 
 	mu.popMatrix(gmu::MODEL);
 }
@@ -168,13 +173,16 @@ void InstancedObjectNode::draw()
 void InstancedObjectNode::updateInstances()
 {
 	std::vector<float> instancePositions;
-	instancePositions.reserve(positions.size() * 3);
+	instancePositions.reserve(positions.size() * 6);
 
-	for (const Vector3& pos : positions)
+	for (const std::pair<Vector3, Vector3>& pos : positions)
 	{
-		instancePositions.push_back(pos.x);
-		instancePositions.push_back(pos.y);
-		instancePositions.push_back(pos.z);
+		instancePositions.push_back(pos.first.x);
+		instancePositions.push_back(pos.first.y);
+		instancePositions.push_back(pos.first.z);
+		instancePositions.push_back(pos.second.x);
+		instancePositions.push_back(pos.second.y);
+		instancePositions.push_back(pos.second.z);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);

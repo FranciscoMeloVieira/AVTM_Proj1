@@ -8,7 +8,7 @@ extern gmu mu;
 OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_textureId(textureId)
 {
 	oranges.resize(numOranges);
-	std::vector<Vector3> positions;
+	std::vector<std::pair<Vector3, Vector3>> positions;
 	for (Orange& orange : oranges)
 	{
 		orange.position = {
@@ -25,7 +25,10 @@ OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_
 		orange.mass = 1.0f;
 
 		spawnOrange(orange);
-		positions.push_back(orange.position);
+
+		Vector3 scale = { 1.0f, 1.0f, 1.0f };
+
+		positions.push_back(std::make_pair(orange.position, scale));
 	}
 
 	// Create the InstancedObjectNode for rendering
@@ -35,7 +38,7 @@ OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_
 
 void OrangesManager::update(float deltaTime)
 {
-	std::vector<Vector3> positions;
+	std::vector<std::pair<Vector3, Vector3>> positions;
 	for (Orange& orange : oranges)
 	{
 		// Physics
@@ -52,7 +55,8 @@ void OrangesManager::update(float deltaTime)
 		{
 			spawnOrange(orange);
 		}
-		positions.push_back(orange.position);
+		Vector3 scale = { 10.0f, 1.0f, 1.0f };
+		positions.push_back(std::make_pair(orange.position, scale));
 	}
 	orangesNode->setPositions(positions);
 }

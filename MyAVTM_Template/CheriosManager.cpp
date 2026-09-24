@@ -12,10 +12,12 @@ CheeriosManager::CheeriosManager(int meshId, int textureId, float spacing)
 {
     buildTrackBorders();
 
-	std::vector<Vector3> positions;
+	std::vector<std::pair<Vector3, Vector3>> positions;
+
+	Vector3 scale = { 1.0f, 1.0f, 1.0f };
 
 	for (const Cheerio& cheerio : cheerios) {
-		positions.push_back(cheerio.position);
+		positions.push_back(std::make_pair(cheerio.position, scale));
 	}
 
 	cheeriosNode = new InstancedObjectNode(m_meshId, m_textureId, positions);
