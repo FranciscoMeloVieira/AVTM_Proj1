@@ -326,10 +326,12 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
     glUniform1i(texMode_loc, data.texMode);
 
     glBindVertexArray(myMeshes[data.meshID].vao);
+    glEnableVertexAttribArray(3);
     glDrawElementsInstanced(myMeshes[data.meshID].type,
         myMeshes[data.meshID].numIndexes,
         GL_UNSIGNED_INT,
         nullptr,
         instanceCount);
+    glDisableVertexAttribArray(3);
     glBindVertexArray(0);
 }

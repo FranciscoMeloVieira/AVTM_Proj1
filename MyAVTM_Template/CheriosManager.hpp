@@ -24,7 +24,7 @@ public:
     CheeriosManager(int meshId, int textureId, float spacing = 10.0f);
     ~CheeriosManager();
 	std::vector<Cheerio> cheerios;
+	InstancedObjectNode* cheeriosNode = nullptr;
 
-    void draw();
     void update(float deltaTime);
 };

@@ -5,6 +5,7 @@
 #include <math.h>
 #include "mathUtility.h"
 #include "model.h"
+#include <Vector3.h>
 
 class Renderer;
 class gmu;
@@ -77,6 +78,26 @@ public:
 private:
 	int meshID = 0;
 	int texMode = 1;
+};
+
+class InstancedObjectNode : public ScenegraphNode
+{
+public:
+	InstancedObjectNode(int meshId, int textureId, const std::vector<Vector3>& positions);
+	void draw() override;
+
+	void setPositions(const std::vector<Vector3>& newPositions) { positions = newPositions; instanceCount = static_cast<int>(positions.size()); updateInstances(); }
+
+private:
+	GLuint instanceVBO;
+
+	std::vector<Vector3> positions;
+	int instanceCount;
+
+	int meshId;
+	int textureId;
+
+	void updateInstances();
 };
 
 

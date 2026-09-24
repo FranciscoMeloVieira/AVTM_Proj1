@@ -12,32 +12,17 @@ CheeriosManager::CheeriosManager(int meshId, int textureId, float spacing)
 {
     buildTrackBorders();
 
+	std::vector<Vector3> positions;
 
-    // Setup Instance VBO
-    glGenBuffers(1, &instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-
-	Vector3* instancePositions = new Vector3[cheerios.size()];
-	for (size_t i = 0; i < cheerios.size(); ++i) {
-		instancePositions[i] = cheerios[i].position;
+	for (const Cheerio& cheerio : cheerios) {
+		positions.push_back(cheerio.position);
 	}
 
-    glBufferData(GL_ARRAY_BUFFER, cheerios.size() * sizeof(Vector3), instancePositions, GL_DYNAMIC_DRAW);
-
-    glBindVertexArray(renderer.myMeshes[m_meshId].vao);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
-    glVertexAttribDivisor(3, 1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+	cheeriosNode = new InstancedObjectNode(m_meshId, m_textureId, positions);
 }
 
 CheeriosManager::~CheeriosManager() {
-    if (instanceVBO != 0) {
-        glDeleteBuffers(1, &instanceVBO);
-    }
+  
 }
 
 void CheeriosManager::addBorderLine(float x1, float z1, float x2, float z2, float spacing) {
@@ -98,45 +83,16 @@ void CheeriosManager::buildTrackBorders() {
     }
 }
 
-void CheeriosManager::draw() {
-
-    glBindVertexArray(renderer.myMeshes[m_meshId].vao);
-    glEnableVertexAttribArray(3);
-
-    if (cheerios.empty()) return;
-
-    mu.pushMatrix(gmu::MODEL);
-
-    mu.loadIdentity(gmu::MODEL);
-
-    mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-    mu.computeNormalMatrix3x3();
-
-    renderer.activateRenderMeshesShaderProg();
-
-    dataMesh data;
-    data.meshID = m_meshId;
-    data.texMode = m_textureId;
-    data.vm = mu.get(gmu::VIEW_MODEL);
-    data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
-    data.normal = mu.getNormalMatrix();
-
-    renderer.renderMeshInstanced(data, static_cast<int>(cheerios.size()));
-
-    mu.popMatrix(gmu::MODEL);
-}
-
 void CheeriosManager::update(float deltaTime) {
     if (cheerios.empty()) return;
 
-	/*for (Cheerio& cheerio : cheerios) {
-		cheerio.position += cheerio.velocity * deltaTime;
-		cheerio.collider->position = cheerio.position;
-	}*/
+    /*std::vector<Vector3> positions;
 
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, cheerios.size() * sizeof(Vector3), nullptr, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    for (const Cheerio& cheerio : cheerios) {
+        positions.push_back(cheerio.position);
+    }
+
+	cheeriosNode->setPositions(positions);*/
 }
 
 void Cheerio::OnCollision(const GameObject& other, const CollisionInfo& info)
