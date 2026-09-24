@@ -139,7 +139,23 @@ void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 
 void Car::addChildren()
 {
-	MeshNode* carBody = new MeshNode(0, 0);
+	Material chassisMaterial = {
+		{ 0.4f, 0.4f, 0.4f, 1.0f }, //Diffuse
+		{ 0.25f, 0.25f, 0.25f, 1.0f }, //Ambient
+		{ 0.77f, 0.77f, 0.77f, 1.0f }, //Specular
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+		(0.6f * 128.0f)  //Shininess
+		};
+
+	Material tireMaterial = {
+		{ 0.01f, 0.01f, 0.01f, 1.0f }, //Diffuse
+		{ 0.02f, 0.02f, 0.02f, 1.0f }, //Ambient
+		{ 0.04f, 0.04f, 0.04f, 1.0f }, //Specular
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+		(0.08f*128.0f)  //Shininess
+	};
+
+	MeshNode* carBody = new MeshNode(0, 0, chassisMaterial);
 	carBody->setTransform(
 		-1.7f, 1.5f, -3.7f,
 		0.0f, 0.0f, 0.0f,
@@ -147,7 +163,7 @@ void Car::addChildren()
 	);
 	this->carNode->addChild(carBody);
 
-	MeshNode* carTop = new MeshNode(0, 0);
+	MeshNode* carTop = new MeshNode(0, 0, chassisMaterial);
 	carTop->setTransform(
 		0.7f - 1.7f, 3.5f, 1.2f - 3.7f,
 		0.0f, 0.0f, 0.0f,
@@ -155,7 +171,7 @@ void Car::addChildren()
 	);
 	this->carNode->addChild(carTop);
 
-	MeshNode* wheel1 = new MeshNode(5, 5);
+	MeshNode* wheel1 = new MeshNode(5, 5, tireMaterial);
 	wheel1->setTransform(
 		0.0f - 1.7f, 1.5f, 1.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,
@@ -163,7 +179,7 @@ void Car::addChildren()
 	);
 	this->carNode->addChild(wheel1);
 
-	MeshNode* wheel2 = new MeshNode(5, 5);
+	MeshNode* wheel2 = new MeshNode(5, 5, tireMaterial);
 	wheel2->setTransform(
 		3.4f - 1.7f, 1.5f, 1.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,
@@ -171,7 +187,7 @@ void Car::addChildren()
 	);
 	this->carNode->addChild(wheel2);
 
-	MeshNode* wheel3 = new MeshNode(5, 5);
+	MeshNode* wheel3 = new MeshNode(5, 5, tireMaterial);
 	wheel3->setTransform(
 		0.0f - 1.7f, 1.5f, 6.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,
@@ -179,7 +195,7 @@ void Car::addChildren()
 	);
 	this->carNode->addChild(wheel3);
 
-	MeshNode* wheel4 = new MeshNode(5, 5);
+	MeshNode* wheel4 = new MeshNode(5, 5, tireMaterial);
 	wheel4->setTransform(
 		3.4f - 1.7f, 1.5f, 6.5f - 3.7f,
 		0.0f, 0.0f, 90.0f,

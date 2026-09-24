@@ -14,6 +14,13 @@ struct dataMesh {
   int meshID = 0;  //mesh ID in the myMeshes array
   float *pvm, *vm, *normal;  //matrices pointers
   int texMode = 0;  //type of shading-> 0:no texturing; 1:modulate diffuse color with texel color; 2:diffuse color is replaced by texel color; 3: multitexturing
+  Material material = {
+        { 0.6f, 0.6f, 0.6f, 1.0f }, //Diffuse
+        { 0.1f, 0.1f, 0.1f, 1.0f }, //Ambient
+        { 0.15f, 0.15f, 0.15f, 1.0f }, //Specular
+        { 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+        10.0f  //Shininess
+        };
 };
 
 enum class Align {

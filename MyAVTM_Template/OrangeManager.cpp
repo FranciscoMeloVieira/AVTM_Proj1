@@ -54,12 +54,22 @@ void OrangesManager::draw() {
 
 	renderer.activateRenderMeshesShaderProg();
 
+	// TODO - is Default Material, improve
+	Material orangeMaterial = {
+		{ 0.6f, 0.6f, 0.6f, 1.0f }, //Diffuse
+		{ 0.1f, 0.1f, 0.1f, 1.0f }, //Ambient
+		{ 0.15f, 0.15f, 0.15f, 1.0f }, //Specular
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+		10.0f  //Shininess
+	};
+
 	dataMesh data;
 	data.meshID = m_meshId;
 	data.texMode = m_textureId;
 	data.vm = mu.get(gmu::VIEW_MODEL);
 	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
 	data.normal = mu.getNormalMatrix();
+	data.material = orangeMaterial;
 
 	renderer.renderMeshInstanced(data, numOranges);
 

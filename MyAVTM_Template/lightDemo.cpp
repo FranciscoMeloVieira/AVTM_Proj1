@@ -538,8 +538,17 @@ void buildSceneGraph() {
 	// Create root node (empty, just a container)
 	sceneRoot = new EmptyNode();
 
+	// TODO - is Default Material, improve
+	Material defaultMaterial = {
+		{ 0.6f, 0.6f, 0.6f, 1.0f }, //Diffuse
+		{ 0.1f, 0.1f, 0.1f, 1.0f }, //Ambient
+		{ 0.15f, 0.15f, 0.15f, 1.0f }, //Specular
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+		10.0f  //Shininess
+	};
+
 	// Create and add floor
-	MeshNode* floor = new MeshNode(0, 6);  // meshID=0, texMode=1
+	MeshNode* floor = new MeshNode(0, 6, defaultMaterial);  // meshID=0, texMode=1
 	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
 	floor->setScale(400.0f, 0.1f, 400.0f);
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
@@ -568,7 +577,7 @@ void buildSceneGraph() {
 	EmptyNode* racetrack = new EmptyNode();
 	sceneRoot->addChild(racetrack);
 
-	MeshNode* trackSegment = new MeshNode(0, 4); 
+	MeshNode* trackSegment = new MeshNode(0, 4, defaultMaterial); 
 	trackSegment->setTransform(
 		0.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f,
@@ -576,7 +585,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);  // Center cube at origin
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 4);
+	trackSegment = new MeshNode(0, 4, defaultMaterial);
 	trackSegment->setTransform(
 		81.0f, 0.0f, 94.0f,
 		0.0f, 0.0f, 0.0f,
@@ -584,7 +593,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 4);
+	trackSegment = new MeshNode(0, 4, defaultMaterial);
 	trackSegment->setTransform(
 		150.0f, 0.0f, 63.0f,
 		0.0f, 0.0f, 0.0f,
@@ -592,7 +601,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 4);
+	trackSegment = new MeshNode(0, 4, defaultMaterial);
 	trackSegment->setTransform(
 		94.0f, 0.0f, 44.0f,
 		0.0f, 0.0f, 0.0f,
@@ -600,7 +609,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 4);
+	trackSegment = new MeshNode(0, 4, defaultMaterial);
 	trackSegment->setTransform(
 		50.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f,
@@ -608,7 +617,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 4);
+	trackSegment = new MeshNode(0, 4, defaultMaterial);
 	trackSegment->setTransform(
 		94.0f, 0.0f, -32.0f,
 		0.0f, 0.0f, 0.0f,
@@ -616,7 +625,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 4);
+	trackSegment = new MeshNode(0, 4, defaultMaterial);
 	trackSegment->setTransform(
 		126.0f, 0.0f, -69.0f,
 		0.0f, 0.0f, 0.0f,
@@ -624,7 +633,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 4);
+	trackSegment = new MeshNode(0, 4, defaultMaterial);
 	trackSegment->setTransform(
 		63.4f, 0.0f, -94.0f,
 		0.0f, 0.0f, 0.0f,

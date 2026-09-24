@@ -90,6 +90,7 @@ void MeshNode::draw() {
 
 	data.meshID = meshID;
 	data.texMode = texMode;
+	data.material = material;
 	data.vm = mu.get(gmu::VIEW_MODEL);
 	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
 	data.normal = mu.getNormalMatrix();
