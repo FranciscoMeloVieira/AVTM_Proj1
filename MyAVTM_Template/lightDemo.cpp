@@ -362,10 +362,6 @@ void processKeys(unsigned char key, int xx, int yy)
 			glutLeaveMainLoop();
 			break;
 
-		case 'c': 
-			printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, _beta, r);
-			break;
-
 		case 'l':   //toggle spotlight mode
 			if (!spotlight_mode) {
 				spotlight_mode = true;
@@ -419,6 +415,17 @@ void processKeys(unsigned char key, int xx, int yy)
 
 		case 'n':
 			lights[6].activated = !lights[6].activated;
+			break;
+		case 'h':
+			lights[7].activated = !lights[7].activated;
+			lights[8].activated = !lights[8].activated;
+			break;
+		case 'c':
+			for (int i = 0; i < 6; i++)
+			{
+				lights[i].activated = !lights[i].activated;
+
+			}
 			break;
 	}
 }
