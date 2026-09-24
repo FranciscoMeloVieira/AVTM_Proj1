@@ -22,7 +22,12 @@ out Data {
 
 void main()
 {
-    vec3 scaledPosition = position.xyz * instanceSize;
+    vec3 Size = instanceSize;
+    if (instanceSize.x == 0.0 || instanceSize.y == 0.0 || instanceSize.z == 0.0)
+    {
+        Size = vec3(1.0, 1.0, 1.0);
+    }
+    vec3 scaledPosition = position.xyz * Size;
 
     vec4 instancePosition =
         vec4(instancePos + scaledPosition, 1.0);
