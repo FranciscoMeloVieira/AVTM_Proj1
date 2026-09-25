@@ -59,6 +59,7 @@ CheeriosManager* cheriosManager = nullptr;
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
+Camera* rearCamera = nullptr;
 
 Camera* activeCamera = nullptr;
 
@@ -258,6 +259,100 @@ void changeSize(int w, int h) {
 int lastTime = 0;
 
 
+void setupRearCameraView() {
+	float* carPos = carnode->carNode->getLocalModelMatrix();
+
+	float eyeX = carPos[12];
+	float eyeY = carPos[13] + 8.0f;
+	float eyeZ = carPos[14];
+
+	float dirX = carPos[8];
+	float dirY = carPos[9];
+	float dirZ = carPos[10];
+
+	float targetX = eyeX - dirX * 10.0f;
+	float targetY = eyeY - dirY * 10.0f;
+	float targetZ = eyeZ - dirZ * 10.0f;
+
+	rearCamera->setCameraPosition(eyeX, eyeY, eyeZ);
+	rearCamera->setCameraTarget(targetX, targetY, targetZ);
+	rearCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
+	rearCamera->applyViewMatrix(mu);
+}
+
+void renderRearViewHUD()
+{
+	int hudWidth = 220;
+	int hudHeight = 140;
+
+	int hudX = (WinX - hudWidth) / 2;
+	int hudY = WinY - hudHeight;
+
+	// SETUP STENCIL MASK WRITING
+	glEnable(GL_STENCIL_TEST);
+	glStencilMask(0xFF);
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_DEPTH_TEST);
+
+	mu.pushMatrix(gmu::PROJECTION);
+	mu.pushMatrix(gmu::VIEW);
+	mu.pushMatrix(gmu::MODEL);
+
+	mu.loadIdentity(gmu::PROJECTION);
+	mu.ortho(0, WinX, 0, WinY, -1, 1);
+	mu.loadIdentity(gmu::VIEW);
+	mu.loadIdentity(gmu::MODEL);
+
+	mu.translate(gmu::MODEL, hudX + hudWidth * 0.5f, hudY + hudHeight * 0.5f, 0.0f);
+	mu.scale(gmu::MODEL, (float)hudWidth, (float)hudHeight, 1.0f);
+
+	renderer.activateRenderMeshesShaderProg();
+	GLuint meshProg = renderer.getMeshShaderProg();
+	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(glGetUniformLocation(meshProg, "m_pvm"), 1, GL_FALSE, mu.get(gmu::PROJ_VIEW_MODEL));
+
+	static MyMesh unitQuadMesh = createQuad(1.0f, 1.0f);
+	glBindVertexArray(unitQuadMesh.vao);
+	glDrawElements(unitQuadMesh.type, unitQuadMesh.numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	mu.popMatrix(gmu::MODEL);
+	mu.popMatrix(gmu::VIEW);
+	mu.popMatrix(gmu::PROJECTION);
+
+	// RENDER SCENE INSIDE STENCIL MASK
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+
+	glStencilFunc(GL_EQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilMask(0x00);
+
+	glViewport(hudX, hudY, hudWidth, hudHeight);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(hudX, hudY, hudWidth, hudHeight);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	float ratio = (float)hudWidth / (float)hudHeight;
+	mu.loadIdentity(gmu::PROJECTION);
+	rearCamera->loadProjectionMatrix(mu, ratio);
+
+	mu.loadIdentity(gmu::MODEL);
+	setupRearCameraView();
+
+	sendLightsToShader(mu.get(gmu::VIEW));
+	sceneRoot->draw();
+
+	glDisable(GL_SCISSOR_TEST);
+	glViewport(0, 0, WinX, WinY);
+}
 // ============================================================================
 // Render the scene and UI
 // ============================================================================
@@ -276,10 +371,12 @@ void renderSim(void) {
 	collisionManager->updateCollisions();
 
 	FrameCount++;
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+
 
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
-
+	renderRearViewHUD();
 	if (activeCamera == camera3) {
 		float* carPos = carnode->carNode->getLocalModelMatrix();
 		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
@@ -304,8 +401,11 @@ void renderSim(void) {
 	sendLightsToShader(mu.get(gmu::VIEW));
 
 	// ===== RENDER SCENEGRAPH =====
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilMask(0x00);
 	sceneRoot->draw();
-
+	glDisable(GL_STENCIL_TEST);
 	// ===== RENDER TEXT =====
 	if (fontLoaded) {
 		glDisable(GL_DEPTH_TEST);
@@ -327,7 +427,6 @@ void renderSim(void) {
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
 	}
-
 	glutSwapBuffers();
 }
 
@@ -563,6 +662,7 @@ void buildSceneGraph() {
 	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);
 	camera2 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	camera3 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
+	rearCamera = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	activeCamera = camera1;
 
 	EmptyNode* racetrack = new EmptyNode();
@@ -758,7 +858,7 @@ int main(int argc, char **argv) {
 
 //  GLUT initialization
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_MULTISAMPLE|GLUT_STENCIL);
 
 	glutInitContextVersion (4, 3);
 	glutInitContextProfile (GLUT_CORE_PROFILE );
@@ -797,6 +897,7 @@ int main(int argc, char **argv) {
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	printf ("Vendor: %s\n", glGetString (GL_VENDOR));
 	printf ("Renderer: %s\n", glGetString (GL_RENDERER));
