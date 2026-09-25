@@ -3,6 +3,8 @@
 #include "Collision.h"
 #include "Vector3.h"
 
+class EmptyNode;
+
 class GameObject : public ICollidable
 {
 public:

@@ -24,8 +24,5 @@ public:
 	}
 
 private:
-	void updateColliderPosition() {
-		const float* matrix = butterNode->getLocalModelMatrix();
-		collider->position = { matrix[12], matrix[13], matrix[14] };
-	}
+	void updateColliderPosition() { collider->position = position; }
 };
