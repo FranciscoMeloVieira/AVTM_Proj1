@@ -14,8 +14,13 @@ void CollisionSystem::updateCollisions()
 			CollisionInfo collisionInfo = CheckCollision(colliderA, colliderB);
 			if (collisionInfo.collisionDetected)
 			{
+				// Object A receives the primary collision info
 				gameObjects[i]->OnCollision(*gameObjects[j], collisionInfo);
-				gameObjects[j]->OnCollision(*gameObjects[i], collisionInfo);
+
+				// Object B receives collision info with an inverted normal
+				CollisionInfo invertedInfo = collisionInfo;
+				invertedInfo.collisionNormal = collisionInfo.collisionNormal * -1.0f; // Negate normal
+				gameObjects[j]->OnCollision(*gameObjects[i], invertedInfo);
 			}
 		}
 	}

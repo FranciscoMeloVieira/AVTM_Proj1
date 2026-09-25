@@ -97,5 +97,4 @@ void CheeriosManager::update(float deltaTime) {
 
 void Cheerio::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
-	std::cout << "Cheerio collided with another object!" << std::endl;
 }

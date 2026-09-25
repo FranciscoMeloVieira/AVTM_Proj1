@@ -56,6 +56,7 @@ CollisionSystem* collisionManager = nullptr;
 Car* carnode = nullptr;
 OrangesManager* orangesManager = nullptr;
 CheeriosManager* cheriosManager = nullptr;
+Butter* butter = nullptr;
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
@@ -164,6 +165,7 @@ void renderSim(void) {
 	carnode->update(deltaTime);
 	orangesManager->update(deltaTime);
 	cheriosManager->update(deltaTime);
+	butter->update(deltaTime);
 	collisionManager->updateCollisions();
 
 	FrameCount++;
@@ -515,7 +517,7 @@ void buildSceneGraph() {
 
 	racetrack->setScale(2.0f, 0.1f, 2.0f);
 
-	Butter* butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
+	butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
 	sceneRoot->addChild(butter->butterNode);
 	collisionManager->AddGameObject(butter);
 }

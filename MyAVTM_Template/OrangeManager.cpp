@@ -125,5 +125,4 @@ void OrangesManager::spawnOrange(Orange& orange)
 
 void Orange::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
-	std::cout << "Orange Colision" << std::endl;
 }
