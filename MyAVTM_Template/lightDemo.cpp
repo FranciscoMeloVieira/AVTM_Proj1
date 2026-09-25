@@ -40,7 +40,7 @@
 #include "CameraFixedPerspective.hpp"
 #include "CameraFixedOrtho.hpp"
 #include "CheriosManager.hpp"
-#include "CollisionDetector.h"
+#include "CollisionSystem.h"
 #include "Butter.h"
 
 using namespace std;
@@ -52,7 +52,7 @@ int WinX = 640, WinY = 480;
 unsigned int FrameCount = 0;
 
 /*TODO - make better pls*/
-CollisionDetector* collisionManager = nullptr;
+CollisionSystem* collisionManager = nullptr;
 Car* carnode = nullptr;
 OrangesManager* orangesManager = nullptr;
 CheeriosManager* cheriosManager = nullptr;
@@ -426,7 +426,7 @@ void buildSceneGraph() {
 
 	orangesManager = new OrangesManager(2, 3);
 	cheriosManager = new CheeriosManager(5, 1, 12.0f);
-	collisionManager = new CollisionDetector();
+	collisionManager = new CollisionSystem();
 	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); 
 	sceneRoot->addChild(carnode->carNode);
 	sceneRoot->addChild(orangesManager->orangesNode);

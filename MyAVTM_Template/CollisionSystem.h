@@ -5,12 +5,12 @@
 #include "Vector3.h"
 
 
-class CollisionDetector
+class CollisionSystem
 {
 public:
 	void updateCollisions();
-	void AddGameObject(PhysicsObject* obj) { gameObjects.push_back(obj); }
+	void AddGameObject(GameObject* obj) { gameObjects.push_back(obj); }
 private:
-	std::vector<PhysicsObject*> gameObjects;
+	std::vector<GameObject*> gameObjects;
 	CollisionInfo CheckCollision(const Collider* a, const Collider* b);
 };

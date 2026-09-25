@@ -160,8 +160,9 @@
     <ClInclude Include="Car.hpp" />
     <ClInclude Include="CheriosManager.hpp" />
     <ClInclude Include="Collision.h" />
-    <ClInclude Include="CollisionDetector.h" />
+    <ClInclude Include="CollisionSystem.h" />
     <ClInclude Include="cube.h" />
+    <ClInclude Include="GameManager.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="ICollidable.h" />
     <ClInclude Include="mathUtility.h" />
@@ -183,7 +184,8 @@
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="CheriosManager.cpp" />
     <ClCompile Include="Collision.cpp" />
-    <ClCompile Include="CollisionDetector.cpp" />
+    <ClCompile Include="CollisionSystem.cpp" />
+    <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />

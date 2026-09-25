@@ -1,8 +1,8 @@
-#include "CollisionDetector.h"
+#include "CollisionSystem.h"
 #include "GameObject.h"
 #include <iostream>
 
-void CollisionDetector::updateCollisions()
+void CollisionSystem::updateCollisions()
 {
 	for (size_t i = 0; i < gameObjects.size(); ++i)
 	{
@@ -21,7 +21,7 @@ void CollisionDetector::updateCollisions()
 	}
 }
 
-CollisionInfo CollisionDetector::CheckCollision(const Collider* colliderA, const Collider* colliderB)
+CollisionInfo CollisionSystem::CheckCollision(const Collider* colliderA, const Collider* colliderB)
 {
 	CollisionInfo collisionInfo;
 
