@@ -33,7 +33,7 @@ void Butter::OnCollision(const GameObject& other, const CollisionInfo& info)
     collider->position = position;
     butterNode->setAbsolutePosition(position.x, position.y, position.z);
 
-	// Should be necessary but bugs are a thing, so let's be safe and ensure the normal is pointing in the right direction
+	// Should not be necessary but bugs are a thing, so let's be safe and ensure the normal is pointing in the right direction
     Vector3 normal = info.collisionNormal;
     Vector3 displacement = position - other.position;
     if (Dot(displacement, normal) < 0.0f)
