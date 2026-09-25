@@ -164,7 +164,6 @@
     <ClInclude Include="Collision.h" />
     <ClInclude Include="CollisionSystem.h" />
     <ClInclude Include="cube.h" />
-    <ClInclude Include="GameManager.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="HUD.h" />
     <ClInclude Include="ICollidable.h" />
@@ -190,7 +189,6 @@
     <ClCompile Include="CheriosManager.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="CollisionSystem.cpp" />
-    <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="HUD.cpp" />
     <ClCompile Include="lightDemo.cpp" />

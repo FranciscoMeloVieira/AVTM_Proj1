@@ -60,6 +60,7 @@ Butter* butter = nullptr;
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
+Camera* rearCamera = nullptr;
 
 Camera* activeCamera = nullptr;
 
@@ -100,6 +101,115 @@ bool fontLoaded = false;
 static EmptyNode* sceneRoot = nullptr;
 
 bool paused = false;
+
+
+/* --- Lights --- */
+const int MAX_LIGHTS = 9;
+
+struct LightCPU {
+	float position[4];
+	float direction[4];
+	float cosCutOff;
+	float spotExp;
+	int type;      // 0 = directional, 1 = point, 2 = spot
+	bool activated;
+};
+
+LightCPU lights[MAX_LIGHTS];
+
+void initScene() {
+	lights[0] = { {  50, 10, -150 , 1}, {0,0,0,0}, 0,0, 1, 1 };
+	lights[1] = { { 250, 10, -150, 1}, {0,0,0,0}, 0,0, 1, 1 };
+	lights[2] = { {  50, 10, 150,   1}, {0,0,0,0}, 0,0, 1, 1 };
+	lights[3] = { { 250, 10, 150,   1}, {0,0,0,0}, 0,0, 1, 1 };
+	lights[4] = { { 150, 10,  0,  1}, {0,0,0,0}, 0,0, 1, 1 };
+	lights[5] = { { -50, 10, -200, 1}, {0,0,0,0}, 0,0, 1, 1 };
+
+	lights[6] = { {0,0,0,0}, { 0.3f, 0.5f, 0.8f, 0 }, 0,0, 0, 1 }; // directional
+
+	float cutOffCos = cosf(15.0f * 3.14159f / 180.0f); 
+	float spotExponent = 20.0f;                       
+
+	lights[7] = { {0,0,0,1}, {0,0,-1,0}, cutOffCos, spotExponent, 2, 1 };
+	lights[8] = { {0,0,0,1}, {0,0,-1,0}, cutOffCos, spotExponent, 2, 1 };
+}
+
+struct LightUniformLocs {
+	GLint position, direction, cosCutOff, spotExp, type, enabled;
+};
+std::vector<LightUniformLocs> lightLocs;
+
+void initLightUniforms(GLuint shaderProgram) {
+	lightLocs.resize(MAX_LIGHTS);
+	for (int i = 0; i < MAX_LIGHTS; i++) {
+		std::string idx = "lights[" + std::to_string(i) + "]";
+		lightLocs[i].position = glGetUniformLocation(shaderProgram, (idx + ".position").c_str());
+		lightLocs[i].direction = glGetUniformLocation(shaderProgram, (idx + ".direction").c_str());
+		lightLocs[i].cosCutOff = glGetUniformLocation(shaderProgram, (idx + ".cosCutOff").c_str());
+		lightLocs[i].spotExp = glGetUniformLocation(shaderProgram, (idx + ".spotExp").c_str());
+		lightLocs[i].type = glGetUniformLocation(shaderProgram, (idx + ".type").c_str());
+		lightLocs[i].enabled = glGetUniformLocation(shaderProgram, (idx + ".activated").c_str());
+	}
+}
+
+void mat4MulVec4(const float* m, const float* v, float* out) {
+	for (int row = 0; row < 4; row++) {
+		out[row] = m[row + 0] * v[0] +
+			m[row + 4] * v[1] +
+			m[row + 8] * v[2] +
+			m[row + 12] * v[3];
+	}
+}
+
+void transformVec4(const float* m, float x, float y, float z, float w, float out[4]) {
+	out[0] = m[0] * x + m[4] * y + m[8] * z + m[12] * w;
+	out[1] = m[1] * x + m[5] * y + m[9] * z + m[13] * w;
+	out[2] = m[2] * x + m[6] * y + m[10] * z + m[14] * w;
+	out[3] = w;
+}
+
+void sendLightsToShader(const float* viewMatrix) {
+
+	float* m = carnode->carNode->getLocalModelMatrix();
+
+	float leftX = -1.0f;   // Left headlight offset
+	float rightX = 1.0f;   // Right headlight offset
+	float heightY = 0.8f;  // Lowered to bumper/grille level
+	float frontZ = 3.5f;  // Front edge of the car body
+
+	transformVec4(m, leftX, heightY, frontZ, 1.0f, lights[7].position);
+
+	transformVec4(m, rightX, heightY, frontZ, 1.0f, lights[8].position);
+
+	float forwardDirZ = (frontZ < 0.0f) ? -1.0f : 1.0f;
+	float localDir[4];
+	transformVec4(m, 0.0f, -0.15f, forwardDirZ, 0.0f, localDir);
+
+	for (int i = 7; i <= 8; i++) {
+		lights[i].direction[0] = localDir[0];
+		lights[i].direction[1] = localDir[1];
+		lights[i].direction[2] = localDir[2];
+		lights[i].direction[3] = 0.0f;
+	}
+
+	for (int i = 0; i < MAX_LIGHTS; i++) {
+		float posIn[4] = { lights[i].position[0], lights[i].position[1],
+							 lights[i].position[2], lights[i].type == 0 ? 0.0f : 1.0f };
+		float dirIn[4] = { lights[i].direction[0], lights[i].direction[1],
+							 lights[i].direction[2], 0.0f };
+
+		float posEye[4], dirEye[4];
+		mat4MulVec4(viewMatrix, posIn, posEye);
+		mat4MulVec4(viewMatrix, dirIn, dirEye);
+
+		glUniform4fv(lightLocs[i].position, 1, posEye);
+		glUniform4fv(lightLocs[i].direction, 1, dirEye);
+		glUniform1f(lightLocs[i].cosCutOff, lights[i].cosCutOff);
+		glUniform1f(lightLocs[i].spotExp, lights[i].spotExp);
+		glUniform1i(lightLocs[i].type, lights[i].type);
+		glUniform1i(lightLocs[i].enabled, lights[i].activated);
+	}
+}
 
 
 /// ::::::::::::::::::::::::::::::::::::::::::::::::CALLBACK FUNCIONS:::::::::::::::::::::::::::::::::::::::::::::::::://///
@@ -150,6 +260,100 @@ void changeSize(int w, int h) {
 int lastTime = 0;
 
 
+void setupRearCameraView() {
+	float* carPos = carnode->carNode->getLocalModelMatrix();
+
+	float eyeX = carPos[12];
+	float eyeY = carPos[13] + 8.0f;
+	float eyeZ = carPos[14];
+
+	float dirX = carPos[8];
+	float dirY = carPos[9];
+	float dirZ = carPos[10];
+
+	float targetX = eyeX - dirX * 10.0f;
+	float targetY = eyeY - dirY * 10.0f;
+	float targetZ = eyeZ - dirZ * 10.0f;
+
+	rearCamera->setCameraPosition(eyeX, eyeY, eyeZ);
+	rearCamera->setCameraTarget(targetX, targetY, targetZ);
+	rearCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
+	rearCamera->applyViewMatrix(mu);
+}
+
+void renderRearViewHUD()
+{
+	int hudWidth = 220;
+	int hudHeight = 140;
+
+	int hudX = (WinX - hudWidth) / 2;
+	int hudY = WinY - hudHeight;
+
+	// SETUP STENCIL MASK WRITING
+	glEnable(GL_STENCIL_TEST);
+	glStencilMask(0xFF);
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_DEPTH_TEST);
+
+	mu.pushMatrix(gmu::PROJECTION);
+	mu.pushMatrix(gmu::VIEW);
+	mu.pushMatrix(gmu::MODEL);
+
+	mu.loadIdentity(gmu::PROJECTION);
+	mu.ortho(0, WinX, 0, WinY, -1, 1);
+	mu.loadIdentity(gmu::VIEW);
+	mu.loadIdentity(gmu::MODEL);
+
+	mu.translate(gmu::MODEL, hudX + hudWidth * 0.5f, hudY + hudHeight * 0.5f, 0.0f);
+	mu.scale(gmu::MODEL, (float)hudWidth, (float)hudHeight, 1.0f);
+
+	renderer.activateRenderMeshesShaderProg();
+	GLuint meshProg = renderer.getMeshShaderProg();
+	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(glGetUniformLocation(meshProg, "m_pvm"), 1, GL_FALSE, mu.get(gmu::PROJ_VIEW_MODEL));
+
+	static MyMesh unitQuadMesh = createQuad(1.0f, 1.0f);
+	glBindVertexArray(unitQuadMesh.vao);
+	glDrawElements(unitQuadMesh.type, unitQuadMesh.numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	mu.popMatrix(gmu::MODEL);
+	mu.popMatrix(gmu::VIEW);
+	mu.popMatrix(gmu::PROJECTION);
+
+	// RENDER SCENE INSIDE STENCIL MASK
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+
+	glStencilFunc(GL_EQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilMask(0x00);
+
+	glViewport(hudX, hudY, hudWidth, hudHeight);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(hudX, hudY, hudWidth, hudHeight);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	float ratio = (float)hudWidth / (float)hudHeight;
+	mu.loadIdentity(gmu::PROJECTION);
+	rearCamera->loadProjectionMatrix(mu, ratio);
+
+	mu.loadIdentity(gmu::MODEL);
+	setupRearCameraView();
+
+	sendLightsToShader(mu.get(gmu::VIEW));
+	sceneRoot->draw();
+
+	glDisable(GL_SCISSOR_TEST);
+	glViewport(0, 0, WinX, WinY);
+}
 // ============================================================================
 // Render the scene and UI
 // ============================================================================
@@ -169,10 +373,12 @@ void renderSim(void) {
 	collisionManager->updateCollisions();
 
 	FrameCount++;
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+
 
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
-
+	renderRearViewHUD();
 	if (activeCamera == camera3) {
 		float* carPos = carnode->carNode->getLocalModelMatrix();
 		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
@@ -187,19 +393,21 @@ void renderSim(void) {
 	renderer.setTexUnit(1, 1);
 	renderer.setTexUnit(2, 2);
 	renderer.setTexUnit(3, 3);
+	renderer.setTexUnit(4, 4);
+	renderer.setTexUnit(5, 5);
 
 	// load identity matrices
 	mu.loadIdentity(gmu::MODEL);
-	//send the light position in eye coordinates
-	renderer.setLightPos(lightPos);
 
-	//Spotlight settings
-	renderer.setSpotLightMode(spotlight_mode);
-	renderer.setSpotParam(coneDir, 0.93);
+	/*  new Lights method */
+	sendLightsToShader(mu.get(gmu::VIEW));
 
 	// ===== RENDER SCENEGRAPH =====
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilMask(0x00);
 	sceneRoot->draw();
-
+	glDisable(GL_STENCIL_TEST);
 	// ===== RENDER TEXT =====
 	if (fontLoaded) {
 		glDisable(GL_DEPTH_TEST);
@@ -221,7 +429,6 @@ void renderSim(void) {
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
 	}
-
 	glutSwapBuffers();
 }
 
@@ -254,10 +461,6 @@ void processKeys(unsigned char key, int xx, int yy)
 			glutLeaveMainLoop();
 			break;
 
-		case 'c': 
-			printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, _beta, r);
-			break;
-
 		case 'l':   //toggle spotlight mode
 			if (!spotlight_mode) {
 				spotlight_mode = true;
@@ -277,8 +480,8 @@ void processKeys(unsigned char key, int xx, int yy)
 			camY = r * sin(_beta * 3.14f / 180.0f);
 			break;
 
-		case 'm': glEnable(GL_MULTISAMPLE); break;
-		case 'n': glDisable(GL_MULTISAMPLE); break;
+		//case 'm': glEnable(GL_MULTISAMPLE); break;
+		//case 'n': glDisable(GL_MULTISAMPLE); break;
 
 		case 'w':
 			carnode->isAccelerating = true;
@@ -307,6 +510,21 @@ void processKeys(unsigned char key, int xx, int yy)
 			break;
 		case 'p':
 			paused = !paused;
+			break;
+
+		case 'n':
+			lights[6].activated = !lights[6].activated;
+			break;
+		case 'h':
+			lights[7].activated = !lights[7].activated;
+			lights[8].activated = !lights[8].activated;
+			break;
+		case 'c':
+			for (int i = 0; i < 6; i++)
+			{
+				lights[i].activated = !lights[i].activated;
+
+			}
 			break;
 	}
 }
@@ -420,7 +638,7 @@ void buildSceneGraph() {
 	sceneRoot = new EmptyNode();
 
 	// Create and add floor
-	MeshNode* floor = new MeshNode(0, 4);  // meshID=0, texMode=1
+	MeshNode* floor = new MeshNode(0, 6);  // meshID=0, texMode=1
 	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
 	floor->setScale(400.0f, 0.1f, 400.0f);
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
@@ -446,12 +664,13 @@ void buildSceneGraph() {
 	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);
 	camera2 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	camera3 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
+	rearCamera = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	activeCamera = camera1;
 
 	EmptyNode* racetrack = new EmptyNode();
 	sceneRoot->addChild(racetrack);
 
-	MeshNode* trackSegment = new MeshNode(0, 0); 
+	MeshNode* trackSegment = new MeshNode(0, 4); 
 	trackSegment->setTransform(
 		0.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f,
@@ -459,7 +678,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);  // Center cube at origin
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		81.0f, 0.0f, 94.0f,
 		0.0f, 0.0f, 0.0f,
@@ -467,7 +686,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		150.0f, 0.0f, 63.0f,
 		0.0f, 0.0f, 0.0f,
@@ -475,7 +694,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		94.0f, 0.0f, 44.0f,
 		0.0f, 0.0f, 0.0f,
@@ -483,7 +702,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		50.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f,
@@ -491,7 +710,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		94.0f, 0.0f, -32.0f,
 		0.0f, 0.0f, 0.0f,
@@ -499,7 +718,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		126.0f, 0.0f, -69.0f,
 		0.0f, 0.0f, 0.0f,
@@ -507,7 +726,7 @@ void buildSceneGraph() {
 	trackSegment->translate(-0.5f, -0.5f, -0.5f);
 	racetrack->addChild(trackSegment);
 
-	trackSegment = new MeshNode(0, 0);
+	trackSegment = new MeshNode(0, 4);
 	trackSegment->setTransform(
 		63.4f, 0.0f, -94.0f,
 		0.0f, 0.0f, 0.0f,
@@ -533,21 +752,23 @@ void buildScene()
 	renderer.TexObjArray.texture2D_Loader("assets/checker.png");
 	renderer.TexObjArray.texture2D_Loader("assets/lightwood.tga");
 	renderer.TexObjArray.texture2D_Loader("assets/orange.png");
+	renderer.TexObjArray.texture2D_Loader("assets/road.jpg");
+	renderer.TexObjArray.texture2D_Loader("assets/Tire.png");
 
 	//Scene geometry with triangle meshes
 
 	MyMesh amesh;
 
-	float amb[] = { 0.2f, 0.15f, 0.1f, 1.0f };
-	float diff[] = { 0.8f, 0.6f, 0.4f, 1.0f };
-	float spec[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	float amb[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	float diff[] = { 0.6f, 0.6f, 0.6f, 1.0f }; 
+	float spec[] = { 0.15f, 0.15f, 0.15f, 1.0f }; 
 
-	float amb1[] = { 0.3f, 0.0f, 0.0f, 1.0f };
-	float diff1[] = { 0.8f, 0.1f, 0.1f, 1.0f };
-	float spec1[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+	float amb1[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	float diff1[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+	float spec1[] = { 0.15f, 0.15f, 0.15f, 1.0f }; 
 
 	float emissive[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float shininess = 100.0f;
+	float shininess = 10.0f; 
 	int texcount = 0;
 
 	// create geometry and VAO of the cube
@@ -639,7 +860,7 @@ int main(int argc, char **argv) {
 
 //  GLUT initialization
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_MULTISAMPLE|GLUT_STENCIL);
 
 	glutInitContextVersion (4, 3);
 	glutInitContextProfile (GLUT_CORE_PROFILE );
@@ -677,7 +898,8 @@ int main(int argc, char **argv) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	printf ("Vendor: %s\n", glGetString (GL_VENDOR));
 	printf ("Renderer: %s\n", glGetString (GL_RENDERER));
@@ -697,6 +919,12 @@ int main(int argc, char **argv) {
 	if(!renderer.setRenderMeshesShaderProg("shaders/mesh.vert", "shaders/mesh.frag") || 
 		!renderer.setRenderTextShaderProg("shaders/ttf.vert", "shaders/ttf.frag"))
 	return(1);
+
+	GLuint meshProg = renderer.getMeshShaderProg();
+	glUseProgram(meshProg);
+	glUniform1i(glGetUniformLocation(meshProg, "lightCount"), MAX_LIGHTS);
+	initScene();
+	initLightUniforms(meshProg);
 
 	//  GLUT main loop
 	glutMainLoop();
