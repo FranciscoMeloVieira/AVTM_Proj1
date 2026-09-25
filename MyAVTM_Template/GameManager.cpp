@@ -1,6 +1,13 @@
 #include "GameManager.h"
 
 
+GameManager::GameManager(EmptyNode* sceneRoot)
+{
+	this->sceneRoot = sceneRoot;
+	hud = new HUD();
+	this->init();
+}
+
 void GameManager::init()
 {
 	collisionSystem = new CollisionSystem();
@@ -22,6 +29,9 @@ void GameManager::init()
 	for (int i = 0; i < cheeriosManager->cheerios.size(); i++) {
 		collisionSystem->AddGameObject(&cheeriosManager->cheerios[i]);
 	}
+
+	HUDData data = { lives, points };
+	hud->setHUDData(data);
 }
 
 void GameManager::update(float deltaTime)

@@ -164,6 +164,7 @@
     <ClInclude Include="cube.h" />
     <ClInclude Include="GameManager.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="HUD.h" />
     <ClInclude Include="ICollidable.h" />
     <ClInclude Include="mathUtility.h" />
     <ClInclude Include="model.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="CollisionSystem.cpp" />
     <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="HUD.cpp" />
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />
     <ClCompile Include="OrangeManager.cpp" />

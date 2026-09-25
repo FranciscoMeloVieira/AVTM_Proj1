@@ -3,16 +3,18 @@
 #include <OrangeManager.hpp>
 #include <CollisionSystem.h>
 #include <Car.hpp>
+#include <HUD.h>	
 
 class GameManager
 {
 public:
-	GameManager();
+	GameManager(EmptyNode* sceneRoot);
 	~GameManager();
 	void init();
 	void update(float deltaTime);
 
 	EmptyNode* sceneRoot;
+	HUD* hud;
 
 	CollisionSystem* collisionSystem;
 	OrangesManager* orangesManager;
@@ -27,6 +29,7 @@ public:
 	void decreaseLive() { lives--; }
 	void addPoints(int p) { points += p; }
 	void resetGame();
+
 
 
 private:
