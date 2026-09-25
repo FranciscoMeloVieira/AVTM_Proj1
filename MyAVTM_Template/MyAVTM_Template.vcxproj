@@ -158,6 +158,8 @@
     <ClInclude Include="Butter.h" />
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="Car.hpp" />
+    <ClInclude Include="Checkpoint.h" />
+    <ClInclude Include="CheckpointManager.h" />
     <ClInclude Include="CheriosManager.hpp" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="CollisionSystem.h" />
@@ -183,6 +185,8 @@
     <ClCompile Include="CameraFixedOrtho.hpp" />
     <ClCompile Include="CameraFixedPerspective.hpp" />
     <ClCompile Include="Car.cpp" />
+    <ClCompile Include="Checkpoint.cpp" />
+    <ClCompile Include="CheckpointManager.cpp" />
     <ClCompile Include="CheriosManager.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="CollisionSystem.cpp" />
