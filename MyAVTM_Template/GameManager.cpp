@@ -15,6 +15,11 @@ void GameManager::init()
 	orangesManager = new OrangesManager(2, 3);
 	cheeriosManager = new CheeriosManager(5, 1, 12.0f);
 	car = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr);
+	car->onOrangeCollision.addListener([this](int damage) {
+		this->takeDamage();
+		});
+
+
 	butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
 
 	//Add Objects to the scene graph

@@ -405,7 +405,7 @@ void renderSim(void) {
 	// ===== RENDER TEXT =====
 	if (fontLoaded) {
 		glDisable(GL_DEPTH_TEST);
-		TextCommand textCmd = { "AVTM 2026 Welcome:\nGood Luck!", {100, 100}, 0.5 };
+		TextCommand textCmd = { "Points: " + std::to_string(gameManager->points) + " Lives: " + std::to_string(gameManager->lives), {100, 100}, 0.5 };
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		int m_viewport[4];

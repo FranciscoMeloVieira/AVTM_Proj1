@@ -129,6 +129,7 @@ void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 		acceleration = { 0.0f, 0.0f, 0.0f };
 		position = { 0.0f, 0.0f, 0.0f };
 		collider->position = position;
+		onOrangeCollision.invoke(1);
 	}
 
 	if (const Checkpoint* checkpoint = dynamic_cast<const Checkpoint*>(&other))

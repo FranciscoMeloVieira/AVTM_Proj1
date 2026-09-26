@@ -31,7 +31,7 @@ public:
 	int lives = 5;
 	int points = 0;
 
-	void decreaseLive() { lives--; }
+	void takeDamage() { lives--; }
 	void addPoints(int p) { points += p; }
 	void resetGame();
 
