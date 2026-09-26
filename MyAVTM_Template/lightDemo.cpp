@@ -53,7 +53,6 @@ unsigned int FrameCount = 0;
 
 /*TODO - make better pls*/
 GameManager* gameManager = nullptr;
-Car* carnode = nullptr;
 
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
@@ -168,7 +167,7 @@ void transformVec4(const float* m, float x, float y, float z, float w, float out
 
 void sendLightsToShader(const float* viewMatrix) {
 
-	float* m = carnode->carNode->getLocalModelMatrix();
+	float* m = gameManager->getCarMatrix();
 
 	float leftX = -1.0f;   // Left headlight offset
 	float rightX = 1.0f;   // Right headlight offset
@@ -259,7 +258,7 @@ int lastTime = 0;
 
 
 void setupRearCameraView() {
-	float* carPos = carnode->carNode->getLocalModelMatrix();
+	float* carPos = gameManager->getCarMatrix();
 
 	float eyeX = carPos[12];
 	float eyeY = carPos[13] + 8.0f;
@@ -375,7 +374,7 @@ void renderSim(void) {
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
 	renderRearViewHUD();
 	if (activeCamera == camera3) {
-		float* carPos = carnode->carNode->getLocalModelMatrix();
+		float* carPos = gameManager->getCarMatrix();
 		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
 		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
 		activeCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
@@ -437,13 +436,13 @@ void processKeysUp(unsigned char key, int xx, int yy)
 	switch (key) {
 	case 'a':
 	case 'd':
-		carnode->steering = 0.0f;
+		gameManager->car->steering = 0.0f;
 		break;
 	case 'w':
-		carnode->isAccelerating = false;
+		gameManager->car->isAccelerating = false;
 		break;
 	case 's':
-		carnode->isDecelerating = false;
+		gameManager->car->isDecelerating = false;
 		break;
 	}
 }
@@ -479,16 +478,16 @@ void processKeys(unsigned char key, int xx, int yy)
 		//case 'n': glDisable(GL_MULTISAMPLE); break;
 
 		case 'w':
-			carnode->isAccelerating = true;
+			gameManager->car->isAccelerating = true;
 			break;
 		case 's':
-			carnode->isDecelerating = true;
+			gameManager->car->isDecelerating = true;
 			break;
 		case 'a':
-			carnode->steering = 1.0f;
+			gameManager->car->steering = 1.0f;
 			break;
 		case 'd':
-			carnode->steering = -1.0f;
+			gameManager->car->steering = -1.0f;
 			break;
 
 		case '1':
@@ -640,7 +639,6 @@ void buildSceneGraph() {
 	sceneRoot->addChild(floor);
 
 	gameManager = new GameManager(sceneRoot);
-	carnode = gameManager->car;
 
 
 	/*TODO - Maybe change location*/

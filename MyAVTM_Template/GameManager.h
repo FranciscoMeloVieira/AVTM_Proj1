@@ -23,6 +23,8 @@ public:
 	Car* car;
 	Butter* butter;
 
+	float* getCarMatrix() { return car->carNode->getLocalModelMatrix(); }
+
 	bool paused = false;
 
 	int lives = 5;
