@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "Checkpoint.h"
+#include "Event.h"
 
 
 class CheckpointManager
@@ -17,6 +18,8 @@ public:
 			checkpoint->update(deltaTime);
 		}
 	}
+
+	Event<int> onCheckpointCrossed; // Event to notify when a checkpoint is crossed
 
 private:
 	float checkpointWidth = 5.0f; // Width of the checkpoint area

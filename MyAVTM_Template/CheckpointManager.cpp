@@ -18,6 +18,7 @@ void CheckpointManager::OnCheckpointCrossed(int checkpointId)
 	if (checkpointId == nextExpectedCheckpointId)
 	{
 		nextExpectedCheckpointId++;
+		onCheckpointCrossed.invoke(1);
 		std::cout << "Checkpoint " << checkpointId << " crossed! Next expected checkpoint: " << nextExpectedCheckpointId << std::endl;
 		if (nextExpectedCheckpointId >= checkpoints.size())
 		{

@@ -32,6 +32,9 @@ void GameManager::init()
 		{ 0.0f, 0.0f, 50.0f },
 		{ 0.0f, 0.0f, -30.0f }
 		});
+	checkpointManager->onCheckpointCrossed.addListener([this](int points) {
+		this->addPoints(points);
+		});
 
 	//Add Objects to the collision system
 	collisionSystem->AddGameObject(car);
