@@ -247,11 +247,24 @@ void Renderer::renderMesh(const dataMesh& data) {
     glUniform1f(loc, myMeshes[data.meshID].mat.shininess);
 
     // Render mesh
-    glUniform1i(texMode_loc, data.texMode);
-
-
+    if (myMeshes[data.meshID].mat.texCount > 0) {
+        for (int i = 0; i < myMeshes[data.meshID].mat.texCount; i++) {
+            GLuint TU = myMeshes[data.meshID].texUnits[i];
+            glActiveTexture(GL_TEXTURE0 + TU);
+            glBindTexture(GL_TEXTURE_2D, TexObjArray.getTextureId(TU));
+            if (myMeshes[data.meshID].texTypes[i] == DIFFUSE)
+                glUniform1i(tex_loc[0], TU); 
+        }
+        glUniform1i(texMode_loc, 2);
+    }
+    else {
+        glUniform1i(texMode_loc, data.texMode);
+    }
 
     glBindVertexArray(myMeshes[data.meshID].vao);
+
+
+
     glDisableVertexAttribArray(3);
     glVertexAttrib3f(3, 0.0f, 0.0f, 0.0f);
 

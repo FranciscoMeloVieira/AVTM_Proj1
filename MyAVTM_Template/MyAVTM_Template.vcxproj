@@ -168,6 +168,7 @@
     <ClInclude Include="HUD.h" />
     <ClInclude Include="ICollidable.h" />
     <ClInclude Include="mathUtility.h" />
+    <ClInclude Include="meshFromAssimp.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="OrangeManager.hpp" />
     <ClInclude Include="renderer.h" />
@@ -193,6 +194,7 @@
     <ClCompile Include="HUD.cpp" />
     <ClCompile Include="lightDemo.cpp" />
     <ClCompile Include="mathUtility.cpp" />
+    <ClCompile Include="meshFromAssimp.cpp" />
     <ClCompile Include="OrangeManager.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="ScenegraphNode.cpp" />

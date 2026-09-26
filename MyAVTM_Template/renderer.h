@@ -64,6 +64,10 @@ public:
 
   GLuint getMeshShaderProg();
 
+  bool loadSceneAssimp(const std::string& path);
+
+  void Renderer::renderMeshFromAssimp(const dataMesh& data);
+
   //Vector with meshes
   std::vector<struct MyMesh> myMeshes;
 

@@ -1,0 +1,12 @@
+# Blender 5.2.2 LTS MTL File: 'LowPolyCars.blend'
+# www.blender.org
+
+newmtl Material.car2
+Ns 200.000000
+Ka 0.200000 0.200000 0.200000
+Ks 0.300000 0.300000 0.300000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd Car Texture 1.png
+map_d Car Texture 1.png
