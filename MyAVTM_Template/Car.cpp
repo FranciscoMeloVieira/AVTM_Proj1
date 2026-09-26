@@ -113,6 +113,13 @@ void Car::stopCar()
 	steering = 0.0f;
 }
 
+void Car::setPosition(Vector3 position)
+{
+	this->position = position;
+	collider->position = position;
+	carNode->setAbsolutePosition(position.x, position.y, position.z);
+}
+
 void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
 	if (const Orange* orange = dynamic_cast<const Orange*>(&other))
@@ -122,16 +129,9 @@ void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 		position = { 0.0f, 0.0f, 0.0f };
 		collider->position = position;
 	}
-	// Push the car out of the collision
+
+	// Push the car out of collision
 	position += info.collisionNormal * info.penetrationDepth;
-
-	// Remove velocity going into the collision surface
-	float velocityIntoWall = Dot(velocity, info.collisionNormal);
-
-	if (velocityIntoWall > 0.0f)
-	{
-		velocity -= info.collisionNormal * velocityIntoWall;
-	}
 
 	collider->position = position;
 	carNode->setAbsolutePosition(position.x, position.y, position.z);

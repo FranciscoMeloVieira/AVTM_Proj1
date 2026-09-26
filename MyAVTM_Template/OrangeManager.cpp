@@ -125,5 +125,24 @@ void OrangesManager::spawnOrange(Orange& orange)
 
 void Orange::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
-	std::cout << "Orange Colision" << std::endl;
+	// 1. Positional correction to prevent sticking inside objects
+	position += info.collisionNormal * info.penetrationDepth;
+
+	// Should not be necessary but bugs are a thing, so let's be safe and ensure the normal is pointing in the right direction
+	Vector3 normal = Normalize(info.collisionNormal);
+	Vector3 displacement = position - other.position;
+	if (Dot(displacement, normal) < 0.0f)
+	{
+		normal = -normal;
+	}
+
+	// 2. Only reflect if moving TOWARD the collision normal
+	if (Dot(velocity, normal) < 0.0f)
+	{
+		// Standard Reflection: R = V - 2*(V . N)*N
+		velocity = velocity - normal * (2.0f * Dot(velocity, normal));
+	}
+
+	// 3. Update scene nodes and colliders
+	collider->position = position;
 }

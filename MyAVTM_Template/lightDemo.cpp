@@ -35,16 +35,13 @@
 
 /*TODO*/
 #include "Car.hpp"
-#include "OrangeManager.hpp"
 #include "Camera.hpp"
 #include "CameraFixedPerspective.hpp"
 #include "CameraFixedOrtho.hpp"
-#include "CheriosManager.hpp"
-#include "CollisionSystem.h"
-#include "Butter.h"
 #include <assimp/Importer.hpp>	//OO version Header!
 #include <assimp/scene.h>
 #include "meshFromAssimp.h"
+#include <GameManager.h>
 
 using namespace std;
 
@@ -55,10 +52,8 @@ int WinX = 640, WinY = 480;
 unsigned int FrameCount = 0;
 
 /*TODO - make better pls*/
-CollisionSystem* collisionManager = nullptr;
-Car* carnode = nullptr;
-OrangesManager* orangesManager = nullptr;
-CheeriosManager* cheriosManager = nullptr;
+GameManager* gameManager = nullptr;
+
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
@@ -172,7 +167,7 @@ void transformVec4(const float* m, float x, float y, float z, float w, float out
 
 void sendLightsToShader(const float* viewMatrix) {
 
-	float* m = carnode->carNode->getLocalModelMatrix();
+	float* m = gameManager->getCarMatrix();
 
 	float leftX = -1.0f;   // Left headlight offset
 	float rightX = 1.0f;   // Right headlight offset
@@ -263,7 +258,7 @@ int lastTime = 0;
 
 
 void setupRearCameraView() {
-	float* carPos = carnode->carNode->getLocalModelMatrix();
+	float* carPos = gameManager->getCarMatrix();
 
 	float eyeX = carPos[12];
 	float eyeY = carPos[13] + 8.0f;
@@ -369,10 +364,7 @@ void renderSim(void) {
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
-	carnode->update(deltaTime);
-	orangesManager->update(deltaTime);
-	cheriosManager->update(deltaTime);
-	collisionManager->updateCollisions();
+	gameManager->update(deltaTime);
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -382,7 +374,7 @@ void renderSim(void) {
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
 	renderRearViewHUD();
 	if (activeCamera == camera3) {
-		float* carPos = carnode->carNode->getLocalModelMatrix();
+		float* carPos = gameManager->getCarMatrix();
 		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
 		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
 		activeCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
@@ -444,13 +436,13 @@ void processKeysUp(unsigned char key, int xx, int yy)
 	switch (key) {
 	case 'a':
 	case 'd':
-		carnode->steering = 0.0f;
+		gameManager->car->steering = 0.0f;
 		break;
 	case 'w':
-		carnode->isAccelerating = false;
+		gameManager->car->isAccelerating = false;
 		break;
 	case 's':
-		carnode->isDecelerating = false;
+		gameManager->car->isDecelerating = false;
 		break;
 	}
 }
@@ -486,16 +478,16 @@ void processKeys(unsigned char key, int xx, int yy)
 		//case 'n': glDisable(GL_MULTISAMPLE); break;
 
 		case 'w':
-			carnode->isAccelerating = true;
+			gameManager->car->isAccelerating = true;
 			break;
 		case 's':
-			carnode->isDecelerating = true;
+			gameManager->car->isDecelerating = true;
 			break;
 		case 'a':
-			carnode->steering = 1.0f;
+			gameManager->car->steering = 1.0f;
 			break;
 		case 'd':
-			carnode->steering = -1.0f;
+			gameManager->car->steering = -1.0f;
 			break;
 
 		case '1':
@@ -646,21 +638,8 @@ void buildSceneGraph() {
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
 	sceneRoot->addChild(floor);
 
-	orangesManager = new OrangesManager(2, 3);
-	cheriosManager = new CheeriosManager(5, 1, 12.0f);
-	collisionManager = new CollisionSystem();
-	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); 
-	sceneRoot->addChild(carnode->carNode);
-	sceneRoot->addChild(orangesManager->orangesNode);
-	sceneRoot->addChild(cheriosManager->cheeriosNode);
+	gameManager = new GameManager(sceneRoot);
 
-	collisionManager->AddGameObject(carnode);
-	for (int i = 0; i < orangesManager->numOranges; i++) {
-		collisionManager->AddGameObject(&orangesManager->oranges[i]);
-	}
-	for (int i = 0; i < cheriosManager->cheerios.size(); i++) {
-		collisionManager->AddGameObject(&cheriosManager->cheerios[i]);
-	}
 
 	/*TODO - Maybe change location*/
 	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);
@@ -737,10 +716,6 @@ void buildSceneGraph() {
 	racetrack->addChild(trackSegment);
 
 	racetrack->setScale(2.0f, 0.1f, 2.0f);
-
-	Butter* butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
-	sceneRoot->addChild(butter->butterNode);
-	collisionManager->AddGameObject(butter);
 }
 
 //

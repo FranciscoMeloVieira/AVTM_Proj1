@@ -17,54 +17,57 @@ Butter::Butter(int meshID, int texMode, Vector3 pos)
 
 	collider = new Collider();
 	collider->position = position;
-	collider->max = { BUTTER_WIDTH / 2.0f, BUTTER_HEIGHT / 2.0f, BUTTER_DEPTH / 2.0f };
-	collider->min = { -BUTTER_WIDTH / 2.0f, -BUTTER_HEIGHT / 2.0f, -BUTTER_DEPTH / 2.0f };
+	collider->max = { BUTTER_WIDTH, BUTTER_HEIGHT, BUTTER_DEPTH };
+	collider->min = { 0.0f, 0.0f, 0.0f };
 }
 
 void Butter::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
-	std::cout << "Butter collided with another object!" << std::endl;
+	auto otherPhysicsObj = dynamic_cast<const PhysicsObject*>(&other);
 
-	// 1. Correct position away from the obstacle
-	position -= info.collisionNormal * info.penetrationDepth;
+    if (!otherPhysicsObj)
+		return;
 
-	// 2. Measure speed moving INTO the collision surface
-	// Note: Dot is negative when moving toward the surface normal
-	float impactSpeed = Dot(velocity, info.collisionNormal);
+    // 1. Positional correction
+    position += info.collisionNormal * info.penetrationDepth;
+    collider->position = position;
+    butterNode->setAbsolutePosition(position.x, position.y, position.z);
 
-	if (impactSpeed < 0.0f)
-	{
-		Vector3 normalVelocity = info.collisionNormal * impactSpeed;
-		Vector3 tangentVelocity = velocity - normalVelocity;
+	// Should not be necessary but bugs are a thing, so let's be safe and ensure the normal is pointing in the right direction
+    Vector3 normal = info.collisionNormal;
+    Vector3 displacement = position - other.position;
+    if (Dot(displacement, normal) < 0.0f)
+    {
+        normal = -normal;
+    }
 
-		float bounciness = 0.1f;    // Minimal rebound
-		float impactFriction = 0.7f; // High speed loss on impact (70% speed dump)
+    // 2. Relative velocity (Velocity of Butter relative to Other)
+    Vector3 relativeVelocity = velocity - otherPhysicsObj->velocity;
 
-		// Cancel inward velocity + heavily dampen sliding velocity
-		velocity = (-normalVelocity * bounciness) + (tangentVelocity * (1.0f - impactFriction));
+    // Calculate velocity projected onto the normal
+    float velAlongNormal = Dot(relativeVelocity, normal);
 
-		// Instantly stop if moving very slowly
-		if (Length(velocity) < 0.1f)
-		{
-			velocity = { 0.0f, 0.0f, 0.0f };
-		}
-	}
+    // Only solve if objects are moving TOWARD each other along the normal
+    if (velAlongNormal < 0.0f)
+    {
+		// Restitution (0.0 = no bounce/stick, 0.2 = slight bounce), should be a property of the object, but for now, let's hardcode it
+        float restitution = 0.1f;
 
-	collider->position = position;
-	butterNode->setAbsolutePosition(position.x, position.y, position.z);
+        // Calculate impulse magnitude
+        float impulseMagnitude = -(1.0f + restitution) * velAlongNormal;
+        impulseMagnitude /= ((1.0f / mass) + (1.0f / otherPhysicsObj->mass));
+
+        // Apply impulse in the direction of the corrected normal
+        Vector3 impulse = normal * impulseMagnitude;
+
+        velocity += impulse * (1.0f / mass);
+    }
 }
 
 void Butter::update(float deltaTime)
 {
-	// 1. Add linear drag to quickly slow down after being hit
-	float friction = 4.0f; // Increase value for a faster slowdown (e.g., 2.0 = smooth stop, 8.0 = quick halt)
-	velocity -= velocity * friction * deltaTime;
-
-	// 2. Stop completely at low thresholds to prevent indefinite sliding
-	if (Length(velocity) < 0.05f)
-	{
-		velocity = { 0.0f, 0.0f, 0.0f };
-	}
+	float frictionCoefficient = 0.7f; // Adjust this value for more or less friction, should depend on the surface and object properties, but hardcoding for now
+	acceleration = -velocity * frictionCoefficient;
 
 	// 3. Physics integration
 	position += velocity * deltaTime;
