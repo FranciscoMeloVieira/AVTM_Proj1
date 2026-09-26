@@ -42,6 +42,9 @@
 #include "CheriosManager.hpp"
 #include "CollisionSystem.h"
 #include "Butter.h"
+#include <assimp/Importer.hpp>	//OO version Header!
+#include <assimp/scene.h>
+#include "meshFromAssimp.h"
 
 using namespace std;
 
@@ -316,6 +319,7 @@ void renderRearViewHUD()
 	GLuint meshProg = renderer.getMeshShaderProg();
 	mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
 	glUniformMatrix4fv(glGetUniformLocation(meshProg, "m_pvm"), 1, GL_FALSE, mu.get(gmu::PROJ_VIEW_MODEL));
+	glUniform1i(glGetUniformLocation(meshProg, "texMode"), 0);
 
 	static MyMesh unitQuadMesh = createQuad(1.0f, 1.0f);
 	glBindVertexArray(unitQuadMesh.vao);
@@ -636,7 +640,7 @@ void buildSceneGraph() {
 	sceneRoot = new EmptyNode();
 
 	// Create and add floor
-	MeshNode* floor = new MeshNode(0, 6);  // meshID=0, texMode=1
+	MeshNode* floor = new MeshNode(0, 10);  // meshID=0, texMode=1
 	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
 	floor->setScale(400.0f, 0.1f, 400.0f);
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
@@ -743,6 +747,8 @@ void buildSceneGraph() {
 // Build the scene with meshes and textures
 //
 
+char model_dir[50];
+
 void buildScene()
 {
 	//Texture Object definition
@@ -828,6 +834,17 @@ void buildScene()
 	amesh.mat.shininess = shininess;
 	amesh.mat.texCount = texcount;
 	renderer.myMeshes.push_back(amesh);
+
+	Assimp::Importer carImporter;
+	const aiScene* carScene = nullptr;
+	float carScaleFactor;
+
+	strcpy(model_dir, "assets/car/"); // Import3DFromFile expects this global set beforehand
+	if (!Import3DFromFile("assets/car/car.obj", carImporter, carScene, carScaleFactor)) {
+		cerr << "Failed to load car.obj\n";
+	}
+
+	createMyMeshFromAssimp(carScene, &renderer);
 
 	buildSceneGraph();
 

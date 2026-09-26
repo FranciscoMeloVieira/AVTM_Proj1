@@ -139,51 +139,10 @@ void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 
 void Car::addChildren()
 {
-	MeshNode* carBody = new MeshNode(0, 0);
-	carBody->setTransform(
-		-1.7f, 1.5f, -3.7f,
-		0.0f, 0.0f, 0.0f,
-		3.4f, 2.0f, 7.4f
-	);
-	this->carNode->addChild(carBody);
-
-	MeshNode* carTop = new MeshNode(0, 0);
-	carTop->setTransform(
-		0.7f - 1.7f, 3.5f, 1.2f - 3.7f,
-		0.0f, 0.0f, 0.0f,
-		2.0f, 1.5f, 5.0f
-	);
-	this->carNode->addChild(carTop);
-
-	MeshNode* wheel1 = new MeshNode(5, 5);
-	wheel1->setTransform(
-		0.0f - 1.7f, 1.5f, 1.5f - 3.7f,
-		0.0f, 0.0f, 90.0f,
-		0.7f, 0.7f, 0.7f
-	);
-	this->carNode->addChild(wheel1);
-
-	MeshNode* wheel2 = new MeshNode(5, 5);
-	wheel2->setTransform(
-		3.4f - 1.7f, 1.5f, 1.5f - 3.7f,
-		0.0f, 0.0f, 90.0f,
-		0.7f, 0.7f, 0.7f
-	);
-	this->carNode->addChild(wheel2);
-
-	MeshNode* wheel3 = new MeshNode(5, 5);
-	wheel3->setTransform(
-		0.0f - 1.7f, 1.5f, 6.5f - 3.7f,
-		0.0f, 0.0f, 90.0f,
-		0.7f, 0.7f, 0.7f
-	);
-	this->carNode->addChild(wheel3);
-
-	MeshNode* wheel4 = new MeshNode(5, 5);
-	wheel4->setTransform(
-		3.4f - 1.7f, 1.5f, 6.5f - 3.7f,
-		0.0f, 0.0f, 90.0f,
-		0.7f, 0.7f, 0.7f
-	);
-	this->carNode->addChild(wheel4);
+	MeshNode* carOBJ = new MeshNode(6, 0);
+	carOBJ->setTransform(
+		0.0f, 0.0f, 0.0f,    // position
+		90.0f, 0.0f, -90.0f,   // rotation — X axis, not Y
+		3.0f, 3.0f, 3.0f);
+	this->carNode->addChild(carOBJ);
 }
