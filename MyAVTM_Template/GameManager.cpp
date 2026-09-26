@@ -1,5 +1,4 @@
-#include "GameManager.h"
-
+﻿#include "GameManager.h"
 
 GameManager::GameManager(EmptyNode* sceneRoot)
 {
@@ -18,7 +17,6 @@ void GameManager::init()
 	car->onOrangeCollision.addListener([this](int damage) {
 		this->takeDamage();
 		});
-
 
 	butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
 
@@ -55,8 +53,17 @@ void GameManager::init()
 
 void GameManager::update(float deltaTime)
 {
-	if (paused)
+	if (hud) {
+		hud->setLives(lives);
+		hud->setPoints(points);
+		hud->setPaused(paused);
+		hud->setGameOver(lives <= 0);
+		hud->update(deltaTime);
+	}
+
+	if (paused || lives <= 0)
 		return;
+
 	car->update(deltaTime);
 	orangesManager->update(deltaTime);
 	cheeriosManager->update(deltaTime);
@@ -70,5 +77,9 @@ void GameManager::resetGame()
 	lives = 5;
 	points = 0;
 	car->setPosition({ 0.0f, 0.0f, 0.0f });
+	if (hud) {
+		hud->setLives(lives);
+		hud->setPoints(points);
+		hud->setGameOver(false);
+	}
 }
-
