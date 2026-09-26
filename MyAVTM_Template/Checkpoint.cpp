@@ -14,23 +14,28 @@ Checkpoint::Checkpoint(CheckpointManager* manager, const Vector3& pos, const Vec
 	collider->max = max; 
 }
 
-void Checkpoint::update(float deltaTime)
-{
-	collidingObjects.clear();
-}
 
-inline void Checkpoint::OnCollision(const GameObject& other, const CollisionInfo& info)
+
+void Checkpoint::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
 	auto car = dynamic_cast<const Car*>(&other);
-
 	if (!car)
 		return;
 
-	auto [iterator, inserted] = collidingObjects.insert(&other);
+	currentFrameObjects.insert(&other);
 
-	if (inserted)
+	if (!previousFrameObjects.contains(&other))
 	{
 		std::cout << "Checkpoint " << id << " crossed!" << std::endl;
-		manager->OnCheckpointCrossed(id);
+		if (manager)
+		{
+			manager->OnCheckpointCrossed(id);
+		}
 	}
+}
+
+void Checkpoint::update(float deltaTime)
+{
+	previousFrameObjects = currentFrameObjects;
+	currentFrameObjects.clear();
 }

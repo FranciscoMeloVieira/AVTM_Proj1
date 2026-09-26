@@ -5,6 +5,7 @@
 #include <Car.hpp>
 #include <HUD.h>	
 #include <Butter.h>
+#include <CheckpointManager.h>
 
 class GameManager
 {
@@ -34,7 +35,7 @@ public:
 	void addPoints(int p) { points += p; }
 	void resetGame();
 
-
+	CheckpointManager* checkpointManager = nullptr;
 
 private:
 };

@@ -23,6 +23,11 @@ void GameManager::init()
 	sceneRoot->addChild(cheeriosManager->cheeriosNode);
 	sceneRoot->addChild(butter->butterNode);
 
+	checkpointManager = new CheckpointManager({
+		{ 0.0f, 0.0f, 50.0f },
+		{ 0.0f, 0.0f, -30.0f }
+		});
+
 	//Add Objects to the collision system
 	collisionSystem->AddGameObject(car);
 	for (int i = 0; i < orangesManager->numOranges; i++) {
@@ -32,6 +37,9 @@ void GameManager::init()
 		collisionSystem->AddGameObject(&cheeriosManager->cheerios[i]);
 	}
 	collisionSystem->AddGameObject(butter);
+	for (int i = 0; i < checkpointManager->checkpoints.size(); i++) {
+		collisionSystem->AddGameObject(checkpointManager->checkpoints[i]);
+	}
 
 	HUDData data = { lives, points };
 	hud->setHUDData(data);
@@ -45,6 +53,7 @@ void GameManager::update(float deltaTime)
 	orangesManager->update(deltaTime);
 	cheeriosManager->update(deltaTime);
 	butter->update(deltaTime);
+	checkpointManager->update(deltaTime);
 	collisionSystem->updateCollisions();
 }
 

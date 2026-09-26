@@ -1,6 +1,7 @@
 #pragma once
 #include "GameObject.h"
 #include <unordered_set>
+#include <unordered_map>
 
 class CheckpointManager;
 
@@ -12,7 +13,10 @@ public:
 	void OnCollision(const GameObject& other, const CollisionInfo& info) override;
 private: 
 	CheckpointManager* manager;
-	std::unordered_set<const GameObject*> collidingObjects;
+
+	std::unordered_set<const GameObject*> currentFrameObjects;
+	std::unordered_set<const GameObject*> previousFrameObjects;
+
 	int id = 0;
 };
 

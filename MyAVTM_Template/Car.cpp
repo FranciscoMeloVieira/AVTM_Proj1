@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <OrangeManager.hpp>
+#include <Checkpoint.h>
 
 extern gmu mu;
 
@@ -128,6 +129,11 @@ void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 		acceleration = { 0.0f, 0.0f, 0.0f };
 		position = { 0.0f, 0.0f, 0.0f };
 		collider->position = position;
+	}
+
+	if (const Checkpoint* checkpoint = dynamic_cast<const Checkpoint*>(&other))
+	{
+		return;
 	}
 
 	// Push the car out of collision

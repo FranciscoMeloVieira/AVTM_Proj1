@@ -1,4 +1,5 @@
 #include "CheckpointManager.h"
+#include <iostream>
 
 CheckpointManager::CheckpointManager(std::vector<Vector3> checkpointPositions)
 {
@@ -17,9 +18,11 @@ void CheckpointManager::OnCheckpointCrossed(int checkpointId)
 	if (checkpointId == nextExpectedCheckpointId)
 	{
 		nextExpectedCheckpointId++;
+		std::cout << "Checkpoint " << checkpointId << " crossed! Next expected checkpoint: " << nextExpectedCheckpointId << std::endl;
 		if (nextExpectedCheckpointId >= checkpoints.size())
 		{
 			nextExpectedCheckpointId = 0; // Loop back to the first checkpoint
+			std::cout << "All checkpoints crossed! Looping back to the first checkpoint." << std::endl;
 		}
 	}
 }
