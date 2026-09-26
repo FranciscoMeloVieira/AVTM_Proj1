@@ -35,16 +35,13 @@
 
 /*TODO*/
 #include "Car.hpp"
-#include "OrangeManager.hpp"
 #include "Camera.hpp"
 #include "CameraFixedPerspective.hpp"
 #include "CameraFixedOrtho.hpp"
-#include "CheriosManager.hpp"
-#include "CollisionSystem.h"
-#include "Butter.h"
 #include <assimp/Importer.hpp>	//OO version Header!
 #include <assimp/scene.h>
 #include "meshFromAssimp.h"
+#include <GameManager.h>
 
 using namespace std;
 
@@ -55,11 +52,9 @@ int WinX = 640, WinY = 480;
 unsigned int FrameCount = 0;
 
 /*TODO - make better pls*/
-CollisionSystem* collisionManager = nullptr;
+GameManager* gameManager = nullptr;
 Car* carnode = nullptr;
-OrangesManager* orangesManager = nullptr;
-CheeriosManager* cheriosManager = nullptr;
-Butter* butter = nullptr;
+
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
@@ -370,11 +365,7 @@ void renderSim(void) {
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
-	carnode->update(deltaTime);
-	orangesManager->update(deltaTime);
-	cheriosManager->update(deltaTime);
-	butter->update(deltaTime);
-	collisionManager->updateCollisions();
+	gameManager->update(deltaTime);
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -648,21 +639,9 @@ void buildSceneGraph() {
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
 	sceneRoot->addChild(floor);
 
-	orangesManager = new OrangesManager(2, 3);
-	cheriosManager = new CheeriosManager(5, 1, 12.0f);
-	collisionManager = new CollisionSystem();
-	carnode = new Car(0, 2, nullptr, 0.0f, nullptr, nullptr); 
-	sceneRoot->addChild(carnode->carNode);
-	sceneRoot->addChild(orangesManager->orangesNode);
-	sceneRoot->addChild(cheriosManager->cheeriosNode);
+	gameManager = new GameManager(sceneRoot);
+	carnode = gameManager->car;
 
-	collisionManager->AddGameObject(carnode);
-	for (int i = 0; i < orangesManager->numOranges; i++) {
-		collisionManager->AddGameObject(&orangesManager->oranges[i]);
-	}
-	for (int i = 0; i < cheriosManager->cheerios.size(); i++) {
-		collisionManager->AddGameObject(&cheriosManager->cheerios[i]);
-	}
 
 	/*TODO - Maybe change location*/
 	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);
@@ -739,10 +718,6 @@ void buildSceneGraph() {
 	racetrack->addChild(trackSegment);
 
 	racetrack->setScale(2.0f, 0.1f, 2.0f);
-
-	butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
-	sceneRoot->addChild(butter->butterNode);
-	collisionManager->AddGameObject(butter);
 }
 
 //

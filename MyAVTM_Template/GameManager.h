@@ -4,6 +4,7 @@
 #include <CollisionSystem.h>
 #include <Car.hpp>
 #include <HUD.h>	
+#include <Butter.h>
 
 class GameManager
 {
@@ -20,6 +21,7 @@ public:
 	OrangesManager* orangesManager;
 	CheeriosManager* cheeriosManager;
 	Car* car;
+	Butter* butter;
 
 	bool paused = false;
 
