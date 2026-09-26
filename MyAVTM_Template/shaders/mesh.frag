@@ -44,6 +44,8 @@ uniform bool spotlight_mode;
 uniform vec4 coneDir;
 uniform float spotCosCutOff;
 
+uniform bool transparent;
+
 out vec4 colorOut;
 
 void main() {
@@ -82,32 +84,38 @@ void main() {
         totalDiffuseSpec += intensity * mat.diffuse + spec;
     }
 
-	vec4 texel, texel1;
+	vec4 texel = vec4(1.0);
+    vec4 texel1 = vec4(1.0);
     vec4 ambientColor = mat.ambient;
-	if (texMode == 0) {
-        colorOut = vec4((totalDiffuseSpec + ambientColor).rgb, 1.0);
+
+    if (texMode == 0) {
+        texel = vec4(1.0);
     } else if (texMode == 1) {
         texel = texture(texmap2, DataIn.tex_coord);
-        colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
     } else if (texMode == 2) {
         texel = texture(texmap, DataIn.tex_coord);
-        colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
     } else if (texMode == 3) {
         texel = texture(texmap3, DataIn.tex_coord / 2.0);
-        colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
     } else if (texMode == 4) {
         texel = texture(texmap4, DataIn.tex_coord / 2.0);
-        colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
     } else if (texMode == 5) {
         texel = texture(texmap5, DataIn.tex_coord / 2.0);
-        colorOut = vec4((totalDiffuseSpec * texel + ambientColor * texel).rgb, 1.0);
     } else {
         texel = texture(texmap2, DataIn.tex_coord);
-        texel1 = texture(texmap3, DataIn.tex_coord); // Just to better visualize
-        vec4 blendedTex = mix(texel, texel1, 0.5); // Blend instead of pure multiplication
-        colorOut = vec4((totalDiffuseSpec * blendedTex + ambientColor * blendedTex).rgb, 1.0);
+        texel1 = texture(texmap3, DataIn.tex_coord);
+        texel = mix(texel, texel1, 0.5);
     }
+
+    vec3 rgbColor = (totalDiffuseSpec * texel + ambientColor * texel + mat.emissive).rgb;
+    float finalAlpha = texel.a * mat.diffuse.a;
+
+    if ((finalAlpha == 1.0 && transparent) || (finalAlpha != 1.0 && !transparent))
+    {
+        discard;
+    }
+
 	float dist = length(DataIn.eye);
-	float fogAmount = clamp((350.0 - dist) / (350.0 - 50.0), 0.0, 1.0);
-	colorOut = vec4(mix(vec3(0.1), colorOut.rgb, fogAmount), 1.0);
+    float fogAmount = clamp((300.0 - dist) / (300.0 - 50.0), 0.0, 1.0);
+    vec3 foggedRGB = mix(vec3(0.4784, 0.6863, 0.7765), rgbColor, fogAmount);
+    colorOut = vec4(foggedRGB, finalAlpha);
 }

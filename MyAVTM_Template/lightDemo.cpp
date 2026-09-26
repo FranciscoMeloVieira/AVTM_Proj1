@@ -277,6 +277,14 @@ void setupRearCameraView() {
 	rearCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
 	rearCamera->applyViewMatrix(mu);
 }
+/* This is so the skybox doesn't have the move from the view matrix, I only rotates */
+void stripTranslation(const float* viewIn, float* viewOut) {
+	memcpy(viewOut, viewIn, sizeof(float) * 16);
+	viewOut[12] = 0.0f;
+	viewOut[13] = 0.0f;
+	viewOut[14] = 0.0f;
+}
+
 
 void renderRearViewHUD()
 {
@@ -347,6 +355,10 @@ void renderRearViewHUD()
 	setupRearCameraView();
 
 	sendLightsToShader(mu.get(gmu::VIEW));
+	float viewNoTrans[16];
+	stripTranslation(mu.get(gmu::VIEW), viewNoTrans);
+	renderer.renderSkybox(mu.get(gmu::PROJECTION), viewNoTrans);
+	renderer.activateRenderMeshesShaderProg();
 	sceneRoot->draw();
 
 	glDisable(GL_SCISSOR_TEST);
@@ -400,8 +412,23 @@ void renderSim(void) {
 	glEnable(GL_STENCIL_TEST);
 	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 	glStencilMask(0x00);
+	float viewNoTrans[16];
+	stripTranslation(mu.get(gmu::VIEW), viewNoTrans);
+	renderer.renderSkybox(mu.get(gmu::PROJECTION), viewNoTrans);
+	renderer.activateRenderMeshesShaderProg();
+	GLuint meshProg = renderer.getMeshShaderProg();
+	GLint isTransparentLoc = glGetUniformLocation(meshProg, "transparent");
+	glUniform1i(isTransparentLoc, GL_FALSE);
+	glDisable(GL_CULL_FACE);
 	sceneRoot->draw();
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glUniform1i(isTransparentLoc, GL_TRUE);
+	sceneRoot->draw();
+	glDepthFunc(GL_LESS);
 	glDisable(GL_STENCIL_TEST);
+	glUniform1i(isTransparentLoc, GL_FALSE);
 	// ===== RENDER TEXT =====
 	if (fontLoaded) {
 		glDisable(GL_DEPTH_TEST);
@@ -841,6 +868,46 @@ void buildScene()
 
 }
 
+unsigned int loadCubemap(vector<std::string> faces)
+{
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	ILuint imageID;
+	ilGenImages(1, &imageID);
+	ilBindImage(imageID);
+
+	for (unsigned int i = 0; i < faces.size(); i++)
+	{
+		if (ilLoadImage((const ILstring)faces[i].c_str()))
+		{
+			ilConvertImage(IL_RGB, IL_UNSIGNED_BYTE);
+
+			int width = ilGetInteger(IL_IMAGE_WIDTH);
+			int height = ilGetInteger(IL_IMAGE_HEIGHT);
+			unsigned char* data = ilGetData();
+
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+			);
+		}
+		else
+		{
+			std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+		}
+	}
+
+	ilDeleteImages(1, &imageID);
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	return textureID;
+}
+
 // ------------------------------------------------------------
 //
 // Main function
@@ -906,8 +973,21 @@ int main(int argc, char **argv) {
 
 	buildScene();
 
+	vector<std::string> skyboxFaces = {
+	"assets/skybox/right.jpg",
+	"assets/skybox/left.jpg",
+	"assets/skybox/top.jpg",
+	"assets/skybox/bottom.jpg",
+	"assets/skybox/front.jpg",
+	"assets/skybox/back.jpg"
+	};
+	GLuint skyboxTex = loadCubemap(skyboxFaces);
+	renderer.setSkyboxCubemap(skyboxTex);
+	renderer.initSkyboxGeometry();
+
 	if(!renderer.setRenderMeshesShaderProg("shaders/mesh.vert", "shaders/mesh.frag") || 
-		!renderer.setRenderTextShaderProg("shaders/ttf.vert", "shaders/ttf.frag"))
+		!renderer.setRenderTextShaderProg("shaders/ttf.vert", "shaders/ttf.frag") || 
+		!renderer.setRenderSkyboxShaderProg("shaders/skybox.vert", "shaders/skybox.frag"))
 	return(1);
 
 	GLuint meshProg = renderer.getMeshShaderProg();
