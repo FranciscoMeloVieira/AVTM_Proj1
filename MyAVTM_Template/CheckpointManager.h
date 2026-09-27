@@ -20,6 +20,9 @@ public:
 	}
 
 	Event<int> onCheckpointCrossed; // Event to notify when a checkpoint is crossed
+	void reset() {
+		nextExpectedCheckpointId = 0;
+	}
 
 private:
 	float checkpointWidth = 5.0f; // Width of the checkpoint area

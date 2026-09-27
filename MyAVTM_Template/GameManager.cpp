@@ -78,6 +78,7 @@ void GameManager::resetGame()
 	points = 0;
 	car->reset({ 0.0f, 0.0f, 0.0f });
 	butter->setPosition(0.0f, 0.0f, 50.0f);
+	checkpointManager->reset();
 	if (hud) {
 		hud->setLives(lives);
 		hud->setPoints(points);

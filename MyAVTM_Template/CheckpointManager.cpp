@@ -18,10 +18,10 @@ void CheckpointManager::OnCheckpointCrossed(int checkpointId)
 	if (checkpointId == nextExpectedCheckpointId)
 	{
 		nextExpectedCheckpointId++;
-		onCheckpointCrossed.invoke(1);
 		std::cout << "Checkpoint " << checkpointId << " crossed! Next expected checkpoint: " << nextExpectedCheckpointId << std::endl;
 		if (nextExpectedCheckpointId >= checkpoints.size())
 		{
+			onCheckpointCrossed.invoke(1);
 			nextExpectedCheckpointId = 0; // Loop back to the first checkpoint
 			std::cout << "All checkpoints crossed! Looping back to the first checkpoint." << std::endl;
 		}
