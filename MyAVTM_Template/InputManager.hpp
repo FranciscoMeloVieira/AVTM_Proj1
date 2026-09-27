@@ -42,5 +42,4 @@ private:
     float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
     float alpha = 180.0f, _beta = 45.0f, r = 45.0f;
     int startX = 0, startY = 0, tracking = 0;
-    bool paused = false;
 };

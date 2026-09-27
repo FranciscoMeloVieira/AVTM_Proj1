@@ -45,9 +45,10 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
         activeCamera = camera3;
         activeCameraChanged = true;
         break;
-
     case 'p':
-        paused = !paused;
+        gameManager->paused = !gameManager->paused;
+        if (gameManager->hud)
+            gameManager->hud->setPaused(gameManager->paused);
         break;
 
     case 'n':
