@@ -50,7 +50,7 @@ namespace {
 }
 
 void LightingSystem::update(const float* carMatrix) {
-	float leftX = -1.0f, rightX = 1.0f, heightY = 0.8f, frontZ = 3.5f;
+	float leftX = -2.0f, rightX = 2.0f, heightY = 1.5f, frontZ = 3.5f;
 
 	transformVec4(carMatrix, leftX, heightY, frontZ, 1.0f, lights[7].position);
 	transformVec4(carMatrix, rightX, heightY, frontZ, 1.0f, lights[8].position);
