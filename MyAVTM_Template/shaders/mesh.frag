@@ -104,12 +104,13 @@ void main() {
         texel = texture(texmap2, DataIn.tex_coord);
         texel1 = texture(texmap3, DataIn.tex_coord);
         texel = mix(texel, texel1, 0.5);
+        texel.a = 0.80; // Change this to reduce reflection
     }
 
     vec3 rgbColor = (totalDiffuseSpec * texel + ambientColor * texel + mat.emissive).rgb;
     float finalAlpha = texel.a * mat.diffuse.a;
 
-    if ((finalAlpha == 1.0 && transparent) || (finalAlpha != 1.0 && !transparent))
+    if ((finalAlpha == 1.0 && transparent) || (finalAlpha != 1.0 && !transparent) && texMode <= 6) // If floor is called then no discard is needed, it's always called when needed
     {
         discard;
     }
