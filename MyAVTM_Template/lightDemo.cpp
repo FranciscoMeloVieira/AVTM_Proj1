@@ -514,6 +514,7 @@ void processKeys(unsigned char key, int xx, int yy)
 			camX = r * sin(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 			camZ = r * cos(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 			camY = r * sin(_beta * 3.14f / 180.0f);
+			gameManager->resetGame();
 			break;
 
 		//case 'm': glEnable(GL_MULTISAMPLE); break;

@@ -27,6 +27,7 @@ public:
     void OnCollision(const GameObject& other, const CollisionInfo& info) override;
 
 	Event<int> onOrangeCollision;
+    void reset(const Vector3& targetPosition, const Vector3& targetFacing = { 0.0f, 0.0f, 1.0f });
 
 private:
     /* Variables for driving */

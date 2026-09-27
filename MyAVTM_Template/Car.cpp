@@ -125,11 +125,8 @@ void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
 	if (const Orange* orange = dynamic_cast<const Orange*>(&other))
 	{
-		velocity = { 0.0f, 0.0f, 0.0f };
-		acceleration = { 0.0f, 0.0f, 0.0f };
-		position = { 0.0f, 0.0f, 0.0f };
-		collider->position = position;
 		onOrangeCollision.invoke(1);
+		reset({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f });
 	}
 
 	if (const Checkpoint* checkpoint = dynamic_cast<const Checkpoint*>(&other))
@@ -142,6 +139,35 @@ void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 
 	collider->position = position;
 	carNode->setAbsolutePosition(position.x, position.y, position.z);
+}
+
+void Car::reset(const Vector3& targetPosition, const Vector3& targetFacing)
+{
+	// 1. Reset position and motion
+	position = targetPosition;
+	velocity = { 0.0f, 0.0f, 0.0f };
+	acceleration = { 0.0f, 0.0f, 0.0f };
+	steering = 0.0f;
+
+	// 2. Reset direction vectors
+	facingDirection = Normalize(targetFacing);
+
+	// 3. Calculate target angle relative to Z-axis (0,0,1)
+	float targetAngle = std::atan2(facingDirection.x, facingDirection.z);
+	float targetDegrees = targetAngle * 180.0f / 3.14159265f;
+	float rotationDifference = targetDegrees - currentRotationY;
+
+	while (rotationDifference > 180.0f) rotationDifference -= 360.0f;
+	while (rotationDifference < -180.0f) rotationDifference += 360.0f;
+
+	currentRotationY += rotationDifference;
+	carNode->setRotation(rotationDifference, 0.0f, 1.0f, 0.0f);
+
+
+	carNode->setAbsolutePosition(position.x, position.y, position.z);
+	
+	collider->position = position;
+	
 }
 
 void Car::addChildren()
