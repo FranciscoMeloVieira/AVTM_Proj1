@@ -15,7 +15,6 @@ public:
     float getCamX() const { return camX; }
     float getCamY() const { return camY; }
     float getCamZ() const { return camZ; }
-    bool isPaused() const { return paused; }
 
     void setGameManager(GameManager* gm) { gameManager = gm; }
     void setLightingSystem(LightingSystem* ls) { lightingSystem = ls; }
