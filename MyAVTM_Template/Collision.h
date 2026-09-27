@@ -14,5 +14,4 @@ public:
 	Vector3 min;
 	Vector3 max;
 	Vector3 position; // Center position of the AABB
-	Vector3 rotation; // Rotation of the AABB (if needed)
 };
