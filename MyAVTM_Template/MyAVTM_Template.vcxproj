@@ -169,6 +169,8 @@
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="HUD.h" />
     <ClInclude Include="ICollidable.h" />
+    <ClInclude Include="InputManager.hpp" />
+    <ClInclude Include="LightningSystem.hpp" />
     <ClInclude Include="mathUtility.h" />
     <ClInclude Include="meshFromAssimp.h" />
     <ClInclude Include="model.h" />
@@ -195,7 +197,9 @@
     <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="HUD.cpp" />
+    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="lightDemo.cpp" />
+    <ClCompile Include="LightningSystem.cpp" />
     <ClCompile Include="mathUtility.cpp" />
     <ClCompile Include="meshFromAssimp.cpp" />
     <ClCompile Include="OrangeManager.cpp" />

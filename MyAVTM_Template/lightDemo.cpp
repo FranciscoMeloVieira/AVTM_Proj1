@@ -12,6 +12,14 @@
 // Author: Jo�o Madeiras Pereira
 //
 
+/*TODO*/
+// E suposto ter o culling ligado 24/7 por causa da transparencia
+// Chão transparente faz com que a skybox passe, e por baixo dá para ver
+// Há problema de na rearMirror não haja objetos transparentes?
+
+
+
+
 #include <math.h>
 #include <iostream>
 #include <fstream>
@@ -38,10 +46,12 @@
 #include "Camera.hpp"
 #include "CameraFixedPerspective.hpp"
 #include "CameraFixedOrtho.hpp"
-#include <assimp/Importer.hpp>	//OO version Header!
+#include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include "meshFromAssimp.h"
 #include <GameManager.h>
+#include "LightningSystem.hpp"
+#include "InputManager.hpp"
 
 using namespace std;
 
@@ -53,13 +63,13 @@ unsigned int FrameCount = 0;
 
 /*TODO - make better pls*/
 GameManager* gameManager = nullptr;
+LightingSystem* lightningSystem = nullptr;
+InputManager* inputManager = nullptr;
 
 Camera* camera1 = nullptr;
 Camera* camera2 = nullptr;
 Camera* camera3 = nullptr;
 Camera* rearCamera = nullptr;
-
-Camera* activeCamera = nullptr;
 
 //File with the font
 const string fontPathFile = "fonts/arial.ttf";
@@ -69,145 +79,17 @@ gmu mu;
 
 //Object of class renderer to manage the rendering of meshes and ttf-based bitmap text
 Renderer renderer;
-	
-// Camera Position (initialize to same defaults as Camera)
-float camX = 0.0f, camY = 0.0f, camZ = 0.0f;
-
-// Camera Spherical Coordinates
-float alpha = 180.0f, _beta = 45.0f;
-float r = 45.0f;
-
-// Mouse Tracking Variables
-int startX, startY, tracking = 0;
 
 // Frame counting and FPS computation
 #define FPS 60
 long myTime,timebase = 0,frame = 0;
 char s[32];
 
-//float lightPos[4] = {4.0f, 5.0f, 2.0f, 1.0f};
-float lightPos[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-//Spotlight
-bool spotlight_mode = false;
-float coneDir[4] = { 0.0f, -0.0f, -1.0f, 0.0f };
-
 bool fontLoaded = false;
 
 // Global scene graph
 static EmptyNode* sceneRoot = nullptr;
 static MeshNode* floorNode = nullptr;
-
-
-/* --- Lights --- */
-const int MAX_LIGHTS = 9;
-
-struct LightCPU {
-	float position[4];
-	float direction[4];
-	float cosCutOff;
-	float spotExp;
-	int type;      // 0 = directional, 1 = point, 2 = spot
-	bool activated;
-};
-
-LightCPU lights[MAX_LIGHTS];
-
-void initScene() {
-	lights[0] = { {  50, 10, -150 , 1}, {0,0,0,0}, 0,0, 1, 1 };
-	lights[1] = { { 250, 10, -150, 1}, {0,0,0,0}, 0,0, 1, 1 };
-	lights[2] = { {  50, 10, 150,   1}, {0,0,0,0}, 0,0, 1, 1 };
-	lights[3] = { { 250, 10, 150,   1}, {0,0,0,0}, 0,0, 1, 1 };
-	lights[4] = { { 150, 10,  0,  1}, {0,0,0,0}, 0,0, 1, 1 };
-	lights[5] = { { -50, 10, -200, 1}, {0,0,0,0}, 0,0, 1, 1 };
-
-	lights[6] = { {0,0,0,0}, { 0.3f, 0.5f, 0.8f, 0 }, 0,0, 0, 1 }; // directional
-
-	float cutOffCos = cosf(15.0f * 3.14159f / 180.0f); 
-	float spotExponent = 20.0f;                       
-
-	lights[7] = { {0,0,0,1}, {0,0,-1,0}, cutOffCos, spotExponent, 2, 1 };
-	lights[8] = { {0,0,0,1}, {0,0,-1,0}, cutOffCos, spotExponent, 2, 1 };
-}
-
-struct LightUniformLocs {
-	GLint position, direction, cosCutOff, spotExp, type, enabled;
-};
-std::vector<LightUniformLocs> lightLocs;
-
-void initLightUniforms(GLuint shaderProgram) {
-	lightLocs.resize(MAX_LIGHTS);
-	for (int i = 0; i < MAX_LIGHTS; i++) {
-		std::string idx = "lights[" + std::to_string(i) + "]";
-		lightLocs[i].position = glGetUniformLocation(shaderProgram, (idx + ".position").c_str());
-		lightLocs[i].direction = glGetUniformLocation(shaderProgram, (idx + ".direction").c_str());
-		lightLocs[i].cosCutOff = glGetUniformLocation(shaderProgram, (idx + ".cosCutOff").c_str());
-		lightLocs[i].spotExp = glGetUniformLocation(shaderProgram, (idx + ".spotExp").c_str());
-		lightLocs[i].type = glGetUniformLocation(shaderProgram, (idx + ".type").c_str());
-		lightLocs[i].enabled = glGetUniformLocation(shaderProgram, (idx + ".activated").c_str());
-	}
-}
-
-void mat4MulVec4(const float* m, const float* v, float* out) {
-	for (int row = 0; row < 4; row++) {
-		out[row] = m[row + 0] * v[0] +
-			m[row + 4] * v[1] +
-			m[row + 8] * v[2] +
-			m[row + 12] * v[3];
-	}
-}
-
-void transformVec4(const float* m, float x, float y, float z, float w, float out[4]) {
-	out[0] = m[0] * x + m[4] * y + m[8] * z + m[12] * w;
-	out[1] = m[1] * x + m[5] * y + m[9] * z + m[13] * w;
-	out[2] = m[2] * x + m[6] * y + m[10] * z + m[14] * w;
-	out[3] = w;
-}
-
-void sendLightsToShader(const float* viewMatrix) {
-
-	float* m = gameManager->getCarMatrix();
-
-	float leftX = -1.0f;   // Left headlight offset
-	float rightX = 1.0f;   // Right headlight offset
-	float heightY = 0.8f;  // Lowered to bumper/grille level
-	float frontZ = 3.5f;  // Front edge of the car body
-
-	transformVec4(m, leftX, heightY, frontZ, 1.0f, lights[7].position);
-
-	transformVec4(m, rightX, heightY, frontZ, 1.0f, lights[8].position);
-
-	float forwardDirZ = (frontZ < 0.0f) ? -1.0f : 1.0f;
-	float localDir[4];
-	transformVec4(m, 0.0f, -0.15f, forwardDirZ, 0.0f, localDir);
-
-	for (int i = 7; i <= 8; i++) {
-		lights[i].direction[0] = localDir[0];
-		lights[i].direction[1] = localDir[1];
-		lights[i].direction[2] = localDir[2];
-		lights[i].direction[3] = 0.0f;
-	}
-
-	for (int i = 0; i < MAX_LIGHTS; i++) {
-		float posIn[4] = { lights[i].position[0], lights[i].position[1],
-							 lights[i].position[2], lights[i].type == 0 ? 0.0f : 1.0f };
-		float dirIn[4] = { lights[i].direction[0], lights[i].direction[1],
-							 lights[i].direction[2], 0.0f };
-
-		float posEye[4], dirEye[4];
-		mat4MulVec4(viewMatrix, posIn, posEye);
-		mat4MulVec4(viewMatrix, dirIn, dirEye);
-
-		glUniform4fv(lightLocs[i].position, 1, posEye);
-		glUniform4fv(lightLocs[i].direction, 1, dirEye);
-		glUniform1f(lightLocs[i].cosCutOff, lights[i].cosCutOff);
-		glUniform1f(lightLocs[i].spotExp, lights[i].spotExp);
-		glUniform1i(lightLocs[i].type, lights[i].type);
-		glUniform1i(lightLocs[i].enabled, lights[i].activated);
-	}
-}
-
-
 /// ::::::::::::::::::::::::::::::::::::::::::::::::CALLBACK FUNCIONS:::::::::::::::::::::::::::::::::::::::::::::::::://///
 
 void timer(int value)
@@ -245,7 +127,27 @@ void changeSize(int w, int h) {
 	// set the projection matrix
 	ratio = (1.0f * w) / h;
 	mu.loadIdentity(gmu::PROJECTION);
-	activeCamera->loadProjectionMatrix(mu, ratio);
+	inputManager->getActiveCamera()->loadProjectionMatrix(mu, ratio);
+}
+
+
+void processKeys(unsigned char key, int x, int y) {
+	if (key == 27) { glutLeaveMainLoop(); return; }
+	inputManager->onKeyDown(key, x, y);
+	if (inputManager->consumeActiveCameraChanged())
+		changeSize(WinX, WinY);
+}
+void processKeysUp(unsigned char key, int x, int y) {
+	inputManager->onKeyUp(key, x, y);
+}
+void processMouseButtons(int button, int state, int x, int y) {
+	inputManager->onMouseButton(button, state, x, y);
+}
+void processMouseMotion(int x, int y) {
+	inputManager->onMouseMotion(x, y);
+}
+void mouseWheel(int wheel, int direction, int x, int y) {
+	inputManager->onMouseWheel(wheel, direction, x, y);
 }
 
 
@@ -353,7 +255,7 @@ void renderRearViewHUD()
 	mu.loadIdentity(gmu::MODEL);
 	setupRearCameraView();
 
-	sendLightsToShader(mu.get(gmu::VIEW));
+	lightningSystem->sendToShader(mu.get(gmu::VIEW), renderer.getMeshShaderProg());
 	float viewNoTrans[16];
 	stripTranslation(mu.get(gmu::VIEW), viewNoTrans);
 	renderer.renderSkybox(mu.get(gmu::PROJECTION), viewNoTrans);
@@ -402,6 +304,7 @@ void renderSim(void) {
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
 	gameManager->update(deltaTime);
+	lightningSystem->update(gameManager->getCarMatrix());
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -411,17 +314,17 @@ void renderSim(void) {
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
 	renderRearViewHUD();
 	float currentCamY = 0.0f;
-	if (activeCamera == camera3) {
+	if (inputManager->getActiveCamera() == camera3) {
 		float* carPos = gameManager->getCarMatrix();
-		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
-		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
-		activeCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
-		currentCamY = carPos[13] + camY;
+		inputManager->getActiveCamera()->setCameraPosition(carPos[12] + inputManager->getCamX(), carPos[13] + inputManager->getCamY(), carPos[14] + inputManager->getCamZ());
+		inputManager->getActiveCamera()->setCameraTarget(carPos[12], carPos[13], carPos[14]);
+		inputManager->getActiveCamera()->setCameraUpVector(0.0f, 1.0f, 0.0f);
+		currentCamY = carPos[13] + inputManager->getCamY();
 	}
-	activeCamera->applyViewMatrix(mu);
-	activeCamera->loadProjectionMatrix(mu, (1.0f * WinX) / WinY);
+	inputManager->getActiveCamera()->applyViewMatrix(mu);
+	inputManager->getActiveCamera()->loadProjectionMatrix(mu, (1.0f * WinX) / WinY);
 
-	sendLightsToShader(mu.get(gmu::VIEW));
+	lightningSystem->sendToShader(mu.get(gmu::VIEW), renderer.getMeshShaderProg());
 
 	if(currentCamY > 0)
 		renderFloorReflection(0.0f);
@@ -438,7 +341,7 @@ void renderSim(void) {
 	mu.loadIdentity(gmu::MODEL);
 
 	/*  new Lights method */
-	sendLightsToShader(mu.get(gmu::VIEW));
+	lightningSystem->sendToShader(mu.get(gmu::VIEW), renderer.getMeshShaderProg());
 
 	// ===== RENDER SCENEGRAPH =====
 	glEnable(GL_STENCIL_TEST);
@@ -466,200 +369,6 @@ void renderSim(void) {
 		gameManager->hud->render(renderer);
 	}
 	glutSwapBuffers();
-}
-
-// ------------------------------------------------------------
-//
-// Events from the Keyboard
-//
-
-void processKeysUp(unsigned char key, int xx, int yy)
-{
-	switch (key) {
-	case 'a':
-	case 'd':
-		gameManager->car->steering = 0.0f;
-		break;
-	case 'w':
-		gameManager->car->isAccelerating = false;
-		break;
-	case 's':
-		gameManager->car->isDecelerating = false;
-		break;
-	}
-}
-
-void processKeys(unsigned char key, int xx, int yy)
-{
-	switch(key) {
-
-		case 27:
-			glutLeaveMainLoop();
-			break;
-
-		case 'l':   //toggle spotlight mode
-			if (!spotlight_mode) {
-				spotlight_mode = true;
-				printf("Point light disabled. Spot light enabled\n");
-			}
-			else {
-				spotlight_mode = false;
-				printf("Spot light disabled. Point light enabled\n");
-			}
-			break;
-
-		case 'r':    //reset
-			alpha = 57.0f; _beta = 18.0f;  // Camera Spherical Coordinates
-			r = 45.0f;
-			camX = r * sin(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
-			camZ = r * cos(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
-			camY = r * sin(_beta * 3.14f / 180.0f);
-			gameManager->resetGame();
-			break;
-
-		//case 'm': glEnable(GL_MULTISAMPLE); break;
-		//case 'n': glDisable(GL_MULTISAMPLE); break;
-
-		case 'w':
-			gameManager->car->isAccelerating = true;
-			break;
-		case 's':
-			gameManager->car->isDecelerating = true;
-			break;
-		case 'a':
-			gameManager->car->steering = 1.0f;
-			break;
-		case 'd':
-			gameManager->car->steering = -1.0f;
-			break;
-
-		case '1':
-			activeCamera = camera1;
-			changeSize(WinX, WinY);
-			break;
-		case '2':
-			activeCamera = camera2;
-			changeSize(WinX, WinY);
-			break;
-		case '3':
-			activeCamera = camera3;
-			changeSize(WinX, WinY);
-			break;
-		case 'p':
-			gameManager->paused = !gameManager->paused;
-			if (gameManager->hud)
-				gameManager->hud->setPaused(gameManager->paused);
-			break;
-
-		case 'n':
-			lights[6].activated = !lights[6].activated;
-			break;
-		case 'h':
-			lights[7].activated = !lights[7].activated;
-			lights[8].activated = !lights[8].activated;
-			break;
-		case 'c':
-			for (int i = 0; i < 6; i++)
-			{
-				lights[i].activated = !lights[i].activated;
-
-			}
-			break;
-	}
-}
-
-
-// ------------------------------------------------------------
-//
-// Mouse Events
-//
-
-void processMouseButtons(int button, int state, int xx, int yy)
-{
-	// start tracking the mouse
-	if (state == GLUT_DOWN)  {
-		startX = xx;
-		startY = yy;
-		if (button == GLUT_LEFT_BUTTON)
-			tracking = 1;
-		else if (button == GLUT_RIGHT_BUTTON)
-			tracking = 2;
-	}
-
-	//stop tracking the mouse
-	else if (state == GLUT_UP) {
-		if (tracking == 1) {
-			alpha -= (xx - startX);
-			_beta += (yy - startY);
-		}
-		else if (tracking == 2) {
-			r += (yy - startY) * 0.01f;
-			if (r < 0.1f)
-				r = 0.1f;
-		}
-		tracking = 0;
-	}
-}
-
-// Track mouse motion while buttons are pressed
-
-void processMouseMotion(int xx, int yy)
-{
-
-	int deltaX, deltaY;
-	float alphaAux, betaAux;
-	float rAux;
-
-	deltaX =  - xx + startX;
-	deltaY =    yy - startY;
-
-	// left mouse button: move camera
-	if (tracking == 1) {
-
-
-		alphaAux = alpha + deltaX;
-		betaAux = _beta + deltaY;
-
-		if (betaAux > 85.0f)
-			betaAux = 85.0f;
-		else if (betaAux < -85.0f)
-			betaAux = -85.0f;
-		rAux = r;
-	}
-	// right mouse button: zoom
-	else if (tracking == 2) {
-
-		alphaAux = alpha;
-		betaAux = _beta;
-		rAux = r + (deltaY * 0.01f);
-		if (rAux < 0.1f)
-			rAux = 0.1f;
-	}
-	if (activeCamera == camera3)
-	{
-		camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-		camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-		camY = rAux * sin(betaAux * 3.14f / 180.0f);
-
-	}
-	
-//  uncomment this if not using an idle or refresh func
-//	glutPostRedisplay();
-}
-
-
-void mouseWheel(int wheel, int direction, int x, int y) {
-
-	r += direction * 0.1f;
-	if (r < 0.1f)
-		r = 0.1f;
-
-	camX = r * sin(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
-	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
-	camY = r *   						     sin(_beta * 3.14f / 180.0f);
-
-//  uncomment this if not using an idle or refresh func
-//	glutPostRedisplay();
 }
 
 
@@ -691,7 +400,6 @@ void buildSceneGraph() {
 	camera2 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	camera3 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	rearCamera = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
-	activeCamera = camera1;
 
 	EmptyNode* racetrack = new EmptyNode();
 	sceneRoot->addChild(racetrack);
@@ -877,13 +585,6 @@ void buildScene()
 		cerr << "Fonts loaded\n";
 
 	printf("\nNumber of Texture Objects is %d\n\n", renderer.TexObjArray.getNumTextureObjects());
-
-	// set the camera position based on its spherical coordinates
-	camX = r * sin(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
-	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
-	camY = r * sin(_beta * 3.14f / 180.0f);
-
-
 }
 
 unsigned int loadCubemap(vector<std::string> faces)
@@ -1009,10 +710,14 @@ int main(int argc, char **argv) {
 	return(1);
 
 	GLuint meshProg = renderer.getMeshShaderProg();
-	glUseProgram(meshProg);
-	glUniform1i(glGetUniformLocation(meshProg, "lightCount"), MAX_LIGHTS);
-	initScene();
-	initLightUniforms(meshProg);
+	lightningSystem = new LightingSystem();
+	lightningSystem->init();
+	lightningSystem->initUniforms(meshProg);
+	inputManager = new InputManager();
+	inputManager->setLightingSystem(lightningSystem);
+	inputManager->setGameManager(gameManager);
+	inputManager->setCameras(camera1, camera2, camera3);
+	inputManager->init();
 
 	//  GLUT main loop
 	glutMainLoop();
