@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 #include <CheriosManager.hpp>
 #include <OrangeManager.hpp>
 #include <CollisionSystem.h>
 #include <Car.hpp>
-#include <HUD.h>	
+#include "HUD.h"
 #include <Butter.h>
+#include <CheckpointManager.h>
 
 class GameManager
 {
@@ -30,12 +31,22 @@ public:
 	int lives = 5;
 	int points = 0;
 
-	void decreaseLive() { lives--; }
-	void addPoints(int p) { points += p; }
+	void takeDamage() {
+		lives--;
+		if (hud) {
+			hud->setLives(lives);
+			if (lives <= 0) hud->setGameOver(true);
+		}
+	}
+	void addPoints(int p) {
+		points += p;
+		if (hud) {
+			hud->setPoints(points);
+		}
+	}
 	void resetGame();
 
-
+	CheckpointManager* checkpointManager = nullptr;
 
 private:
 };
-

@@ -1,4 +1,4 @@
-//
+ï»¿//
 // AVT 2026: Texturing with Phong Shading and Text rendered with TrueType library
 // The text rendering was based on https://dev.to/shreyaspranav/how-to-render-truetype-fonts-in-opengl-using-stbtruetypeh-1p5k
 // You can also learn an alternative with FreeType text: https://learnopengl.com/In-Practice/Text-Rendering
@@ -9,7 +9,7 @@
 // The code comes with no warranties, use it at your own risk.
 // You may use it, or parts of it, wherever you want.
 // 
-// Author: João Madeiras Pereira
+// Author: Joï¿½o Madeiras Pereira
 //
 
 #include <math.h>
@@ -97,8 +97,6 @@ bool fontLoaded = false;
 // Global scene graph
 static EmptyNode* sceneRoot = nullptr;
 static MeshNode* floorNode = nullptr;
-
-bool paused = false;
 
 
 /* --- Lights --- */
@@ -400,11 +398,6 @@ void renderFloorReflection(float floorY)
 // Render the scene and UI
 // ============================================================================
 void renderSim(void) {
-	if (paused == true) {
-		glutPostRedisplay();
-		lastTime = glutGet(GLUT_ELAPSED_TIME);
-		return;
-	}
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
@@ -469,25 +462,8 @@ void renderSim(void) {
 	glDisable(GL_STENCIL_TEST);
 	glUniform1i(isTransparentLoc, GL_FALSE);
 	// ===== RENDER TEXT =====
-	if (fontLoaded) {
-		glDisable(GL_DEPTH_TEST);
-		TextCommand textCmd = { "AVTM 2026 Welcome:\nGood Luck!", {100, 100}, 0.5 };
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		int m_viewport[4];
-		glGetIntegerv(GL_VIEWPORT, m_viewport);
-
-		mu.loadIdentity(gmu::MODEL);
-		mu.loadIdentity(gmu::VIEW);
-		mu.pushMatrix(gmu::PROJECTION);
-		mu.loadIdentity(gmu::PROJECTION);
-		mu.ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-		mu.computeDerivedMatrix(gmu::PROJ_VIEW_MODEL);
-		textCmd.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
-		renderer.renderText(textCmd);
-		mu.popMatrix(gmu::PROJECTION);
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
+	if (fontLoaded && gameManager && gameManager->hud) {
+		gameManager->hud->render(renderer);
 	}
 	glutSwapBuffers();
 }
@@ -538,6 +514,7 @@ void processKeys(unsigned char key, int xx, int yy)
 			camX = r * sin(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 			camZ = r * cos(alpha * 3.14f / 180.0f) * cos(_beta * 3.14f / 180.0f);
 			camY = r * sin(_beta * 3.14f / 180.0f);
+			gameManager->resetGame();
 			break;
 
 		//case 'm': glEnable(GL_MULTISAMPLE); break;
@@ -569,7 +546,9 @@ void processKeys(unsigned char key, int xx, int yy)
 			changeSize(WinX, WinY);
 			break;
 		case 'p':
-			paused = !paused;
+			gameManager->paused = !gameManager->paused;
+			if (gameManager->hud)
+				gameManager->hud->setPaused(gameManager->paused);
 			break;
 
 		case 'n':

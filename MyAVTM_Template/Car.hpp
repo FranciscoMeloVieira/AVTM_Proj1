@@ -1,6 +1,7 @@
 #pragma once
 #include <ScenegraphNode.h>
 #include "GameObject.h"
+#include "Event.h"
 
 
 class Car : public PhysicsObject {
@@ -24,6 +25,9 @@ public:
 	bool isDecelerating = false;
     EmptyNode* carNode = nullptr; // Node representing the car
     void OnCollision(const GameObject& other, const CollisionInfo& info) override;
+
+	Event<int> onOrangeCollision;
+    void reset(const Vector3& targetPosition, const Vector3& targetFacing = { 0.0f, 0.0f, 1.0f });
 
 private:
     /* Variables for driving */
