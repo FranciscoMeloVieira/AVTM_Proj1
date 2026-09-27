@@ -426,6 +426,7 @@ void renderSim(void) {
 		currentCamY = carPos[13] + camY;
 	}
 	activeCamera->applyViewMatrix(mu);
+	activeCamera->loadProjectionMatrix(mu, (1.0f * WinX) / WinY);
 
 	sendLightsToShader(mu.get(gmu::VIEW));
 
@@ -458,7 +459,6 @@ void renderSim(void) {
 	GLint isTransparentLoc = glGetUniformLocation(meshProg, "transparent");
 	glUniform1i(isTransparentLoc, GL_FALSE);
 	sceneRoot->draw();
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glUniform1i(isTransparentLoc, GL_TRUE);
