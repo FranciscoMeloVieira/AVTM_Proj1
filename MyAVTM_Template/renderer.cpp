@@ -352,3 +352,95 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
 }
 
 GLuint Renderer::getMeshShaderProg() { return program; }
+
+float skyboxVertices[] = {
+    // positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+};
+
+bool Renderer::setRenderSkyboxShaderProg(const std::string& vertPath, const std::string& fragPath) {
+    Shader shader;
+    shader.init();
+    skyboxProgram = shader.getProgramIndex();
+    shader.compileShader(Shader::VERTEX_SHADER, vertPath);
+    shader.compileShader(Shader::FRAGMENT_SHADER, fragPath);
+    glBindAttribLocation(skyboxProgram, 0, "aPos");
+    glLinkProgram(skyboxProgram);
+
+    skyboxProj_loc = glGetUniformLocation(skyboxProgram, "projection");
+    skyboxView_loc = glGetUniformLocation(skyboxProgram, "view");
+
+    glUseProgram(skyboxProgram);
+    glUniform1i(glGetUniformLocation(skyboxProgram, "skybox"), 0);
+
+    return shader.isProgramLinked() && shader.isProgramValid();
+}
+
+void Renderer::initSkyboxGeometry() {
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindVertexArray(0);
+}
+
+void Renderer::renderSkybox(const float* projMatrix, const float* viewMatrixNoTranslation) {
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
+    glUseProgram(skyboxProgram);
+    glUniformMatrix4fv(skyboxProj_loc, 1, GL_FALSE, projMatrix);
+    glUniformMatrix4fv(skyboxView_loc, 1, GL_FALSE, viewMatrixNoTranslation);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexID);
+
+    glBindVertexArray(skyboxVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
+}

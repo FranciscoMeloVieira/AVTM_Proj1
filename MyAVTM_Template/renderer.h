@@ -69,6 +69,16 @@ public:
 
   void Renderer::renderMeshFromAssimp(const dataMesh& data);
 
+
+  /* --- Methods for the skybox (1st attempt) --- */
+  GLuint skyboxProgram = 0, skyboxVAO = 0, skyboxVBO = 0, skyboxTexID = 0;
+  GLint skyboxProj_loc = -1, skyboxView_loc = -1;
+
+  bool setRenderSkyboxShaderProg(const std::string& vertPath, const std::string& fragPath);
+  void initSkyboxGeometry(); 
+  void setSkyboxCubemap(GLuint texID) { skyboxTexID = texID; }
+  void renderSkybox(const float* projMatrix, const float* viewMatrix);
+
   //Vector with meshes
   std::vector<struct MyMesh> myMeshes;
 

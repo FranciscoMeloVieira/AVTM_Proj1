@@ -96,6 +96,7 @@ bool fontLoaded = false;
 
 // Global scene graph
 static EmptyNode* sceneRoot = nullptr;
+static MeshNode* floorNode = nullptr;
 
 
 /* --- Lights --- */
@@ -275,6 +276,14 @@ void setupRearCameraView() {
 	rearCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
 	rearCamera->applyViewMatrix(mu);
 }
+/* This is so the skybox doesn't have the move from the view matrix, I only rotates */
+void stripTranslation(const float* viewIn, float* viewOut) {
+	memcpy(viewOut, viewIn, sizeof(float) * 16);
+	viewOut[12] = 0.0f;
+	viewOut[13] = 0.0f;
+	viewOut[14] = 0.0f;
+}
+
 
 void renderRearViewHUD()
 {
@@ -345,10 +354,45 @@ void renderRearViewHUD()
 	setupRearCameraView();
 
 	sendLightsToShader(mu.get(gmu::VIEW));
+	float viewNoTrans[16];
+	stripTranslation(mu.get(gmu::VIEW), viewNoTrans);
+	renderer.renderSkybox(mu.get(gmu::PROJECTION), viewNoTrans);
+	renderer.activateRenderMeshesShaderProg();
 	sceneRoot->draw();
+	floorNode->draw();
 
 	glDisable(GL_SCISSOR_TEST);
 	glViewport(0, 0, WinX, WinY);
+}
+void renderFloorReflection(float floorY)
+{
+	glEnable(GL_STENCIL_TEST);
+
+	glStencilMask(0x02);
+	glStencilFunc(GL_ALWAYS, 0x02, 0x02);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthMask(GL_FALSE);
+	GLuint meshProg = renderer.getMeshShaderProg();
+	glUniform1i(glGetUniformLocation(meshProg, "transparent"), GL_FALSE);
+	floorNode->draw();
+
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glStencilFunc(GL_EQUAL, 0x02, 0x03);
+	glStencilMask(0x00);
+
+	mu.pushMatrix(gmu::MODEL);
+	mu.loadIdentity(gmu::MODEL);
+	mu.scale(gmu::MODEL, 1.0f, -1.0f, 1.0f);
+
+	glFrontFace(GL_CW); // negative scale flips winding
+
+
+	sceneRoot->draw();
+
+	glFrontFace(GL_CCW);
+	mu.popMatrix(gmu::MODEL);
 }
 // ============================================================================
 // Render the scene and UI
@@ -366,14 +410,20 @@ void renderSim(void) {
 
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
 	renderRearViewHUD();
+	float currentCamY = 0.0f;
 	if (activeCamera == camera3) {
 		float* carPos = gameManager->getCarMatrix();
 		activeCamera->setCameraPosition(carPos[12]+camX, carPos[13]+camY, carPos[14]+camZ);
 		activeCamera->setCameraTarget(carPos[12], carPos[13], carPos[14]);
 		activeCamera->setCameraUpVector(0.0f, 1.0f, 0.0f);
+		currentCamY = carPos[13] + camY;
 	}
 	activeCamera->applyViewMatrix(mu);
 
+	sendLightsToShader(mu.get(gmu::VIEW));
+
+	if(currentCamY > 0)
+		renderFloorReflection(0.0f);
 	//Associar os Texture Units aos Objects Texture
 	//stone.tga loaded in TU0; checker.tga loaded in TU1;  lightwood.tga loaded in TU2
 	renderer.setTexUnit(0, 0);
@@ -391,10 +441,26 @@ void renderSim(void) {
 
 	// ===== RENDER SCENEGRAPH =====
 	glEnable(GL_STENCIL_TEST);
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilFunc(GL_NOTEQUAL, 0x01, 0x01);
 	glStencilMask(0x00);
+	float viewNoTrans[16];
+	stripTranslation(mu.get(gmu::VIEW), viewNoTrans);
+	renderer.renderSkybox(mu.get(gmu::PROJECTION), viewNoTrans);
+	renderer.activateRenderMeshesShaderProg();
+	GLuint meshProg = renderer.getMeshShaderProg();
+	GLint isTransparentLoc = glGetUniformLocation(meshProg, "transparent");
+	glUniform1i(isTransparentLoc, GL_FALSE);
 	sceneRoot->draw();
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glUniform1i(isTransparentLoc, GL_TRUE);
+	sceneRoot->draw();
+	floorNode->draw();
+
+	glDepthFunc(GL_LESS);
 	glDisable(GL_STENCIL_TEST);
+	glUniform1i(isTransparentLoc, GL_FALSE);
 	// ===== RENDER TEXT =====
 	if (fontLoaded && gameManager && gameManager->hud) {
 		gameManager->hud->render(renderer);
@@ -614,7 +680,7 @@ void buildSceneGraph() {
 	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
 	floor->setScale(400.0f, 0.1f, 400.0f);
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
-	sceneRoot->addChild(floor);
+	floorNode = floor;
 
 	gameManager = new GameManager(sceneRoot);
 
@@ -819,6 +885,46 @@ void buildScene()
 
 }
 
+unsigned int loadCubemap(vector<std::string> faces)
+{
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	ILuint imageID;
+	ilGenImages(1, &imageID);
+	ilBindImage(imageID);
+
+	for (unsigned int i = 0; i < faces.size(); i++)
+	{
+		if (ilLoadImage((const ILstring)faces[i].c_str()))
+		{
+			ilConvertImage(IL_RGB, IL_UNSIGNED_BYTE);
+
+			int width = ilGetInteger(IL_IMAGE_WIDTH);
+			int height = ilGetInteger(IL_IMAGE_HEIGHT);
+			unsigned char* data = ilGetData();
+
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+			);
+		}
+		else
+		{
+			std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+		}
+	}
+
+	ilDeleteImages(1, &imageID);
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	return textureID;
+}
+
 // ------------------------------------------------------------
 //
 // Main function
@@ -884,8 +990,21 @@ int main(int argc, char **argv) {
 
 	buildScene();
 
+	vector<std::string> skyboxFaces = {
+	"assets/skybox/right.jpg",
+	"assets/skybox/left.jpg",
+	"assets/skybox/top.jpg",
+	"assets/skybox/bottom.jpg",
+	"assets/skybox/front.jpg",
+	"assets/skybox/back.jpg"
+	};
+	GLuint skyboxTex = loadCubemap(skyboxFaces);
+	renderer.setSkyboxCubemap(skyboxTex);
+	renderer.initSkyboxGeometry();
+
 	if(!renderer.setRenderMeshesShaderProg("shaders/mesh.vert", "shaders/mesh.frag") || 
-		!renderer.setRenderTextShaderProg("shaders/ttf.vert", "shaders/ttf.frag"))
+		!renderer.setRenderTextShaderProg("shaders/ttf.vert", "shaders/ttf.frag") || 
+		!renderer.setRenderSkyboxShaderProg("shaders/skybox.vert", "shaders/skybox.frag"))
 	return(1);
 
 	GLuint meshProg = renderer.getMeshShaderProg();
@@ -899,8 +1018,3 @@ int main(int argc, char **argv) {
 
 	return(0);
 }
-
-
-
-
-
