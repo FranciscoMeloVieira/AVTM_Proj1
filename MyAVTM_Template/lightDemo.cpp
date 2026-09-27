@@ -83,8 +83,6 @@ Renderer renderer;
 
 // Frame counting and FPS computation
 #define FPS 60
-long myTime,timebase = 0,frame = 0;
-char s[32];
 
 bool fontLoaded = false;
 
@@ -102,13 +100,6 @@ void timer(int value)
 	glutSetWindowTitle(s.c_str());
     FrameCount = 0;
     glutTimerFunc(1000, timer, 0);
-}
-
-void refresh(int value)
-{
-	//PUT YOUR CODE HERE
-	glutPostRedisplay();
-	glutTimerFunc(1000 / FPS, refresh, 0);
 }
 
 // ------------------------------------------------------------
