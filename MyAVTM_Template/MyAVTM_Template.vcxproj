@@ -173,6 +173,7 @@
     <ClInclude Include="LightningSystem.hpp" />
     <ClInclude Include="mathUtility.h" />
     <ClInclude Include="meshFromAssimp.h" />
+    <ClInclude Include="MirrorRenderer.hpp" />
     <ClInclude Include="model.h" />
     <ClInclude Include="OrangeManager.hpp" />
     <ClInclude Include="renderer.h" />
@@ -202,6 +203,7 @@
     <ClCompile Include="LightningSystem.cpp" />
     <ClCompile Include="mathUtility.cpp" />
     <ClCompile Include="meshFromAssimp.cpp" />
+    <ClCompile Include="MirrorRenderer.cpp" />
     <ClCompile Include="OrangeManager.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="ScenegraphNode.cpp" />
