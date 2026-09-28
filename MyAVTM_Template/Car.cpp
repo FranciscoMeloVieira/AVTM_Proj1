@@ -172,7 +172,23 @@ void Car::reset(const Vector3& targetPosition, const Vector3& targetFacing)
 
 void Car::addChildren()
 {
-	MeshNode* carOBJ = new MeshNode(6, 0);
+	Material chassisMaterial = {
+	{ 0.4f, 0.4f, 0.4f, 1.0f }, //Diffuse
+	{ 0.25f, 0.25f, 0.25f, 1.0f }, //Ambient
+	{ 0.77f, 0.77f, 0.77f, 1.0f }, //Specular
+	{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+	(0.6f * 128.0f)  //Shininess
+	};
+
+	Material tireMaterial = {
+		{ 0.01f, 0.01f, 0.01f, 1.0f }, //Diffuse
+		{ 0.02f, 0.02f, 0.02f, 1.0f }, //Ambient
+		{ 0.04f, 0.04f, 0.04f, 1.0f }, //Specular
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+		(0.08f * 128.0f)  //Shininess
+	};
+
+	MeshNode* carOBJ = new MeshNode(6, 0, chassisMaterial);
 	carOBJ->setTransform(
 		0.0f, 0.0f, 0.0f,    // position
 		90.0f, 0.0f, -90.0f,   // rotation — X axis, not Y

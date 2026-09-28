@@ -8,7 +8,15 @@ extern Renderer renderer;
 
 Butter::Butter(int meshID, int texMode, Vector3 pos)
 {
-	butterNode = new MeshNode(meshID, texMode);
+    Material butterMaterial = { // Based on yellow plastic
+		{ 0.5f, 0.5f, 0.0f, 1.0f }, //Diffuse
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, //Ambient
+		{ 0.6f, 0.6f, 0.5f, 1.0f }, //Specular
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+		(0.25f*128.0f)  //Shininess
+	};
+
+	butterNode = new MeshNode(meshID, texMode, butterMaterial);
 	butterNode->setTexMode(BUTTER_TEXTURE_MODE);
 
 	butterNode->setScale(BUTTER_WIDTH, BUTTER_HEIGHT, BUTTER_DEPTH);

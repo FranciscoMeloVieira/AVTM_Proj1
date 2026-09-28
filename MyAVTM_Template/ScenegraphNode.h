@@ -67,23 +67,26 @@ public:
 			 const float* axis = nullptr,
 		const float* scale = nullptr) : ScenegraphNode(position, angle, axis, scale), meshID(meshID) {}
 	MeshNode(int meshID, const float(&transformMatrix)[16]) : ScenegraphNode(transformMatrix), meshID(meshID) {}
-	MeshNode(int meshID, int texMode) : ScenegraphNode(), meshID(meshID), texMode(texMode) {}
+	MeshNode(int meshID, int texMode, Material mat) : ScenegraphNode(), meshID(meshID), texMode(texMode), material(mat) {}
 
 	void draw() override;
 	void setTexMode(int _texMode) { texMode = _texMode; }
 	int getTexMode() const { return texMode; }
 	void setMeshID(int _meshID) { meshID = _meshID; }
 	int getMeshID() const { return meshID; }
+	void setMaterial(Material _mat) { material = _mat; }
+	Material getMaterial() const { return material; }
 
 private:
 	int meshID = 0;
 	int texMode = 1;
+	Material material;
 };
 
 class InstancedObjectNode : public ScenegraphNode
 {
 public:
-	InstancedObjectNode(int meshId, int textureId, const std::vector<Vector3>& positions);
+	InstancedObjectNode(int meshId, int textureId, Material material, const std::vector<Vector3>& positions);
 	void draw() override;
 
 	void setPositions(const std::vector<Vector3>& newPositions) { positions = newPositions; instanceCount = static_cast<int>(positions.size()); updateInstances(); }
@@ -96,6 +99,7 @@ private:
 
 	int meshId;
 	int textureId;
+	Material material;
 
 	void updateInstances();
 };

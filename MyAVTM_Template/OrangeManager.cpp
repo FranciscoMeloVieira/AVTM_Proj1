@@ -7,6 +7,14 @@ extern gmu mu;
 
 OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_textureId(textureId)
 {
+	Material orangeMaterial = { //Based on Red Rubber
+	{ 0.5f, 0.4f, 0.4f, 1.0f }, //Diffuse
+	{ 0.05f, 0.05f, 0.05f, 1.0f }, //Ambient
+	{ 0.4f, 0.7f, 0.04f, 1.0f }, //Specular
+	{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+	(0.08f * 128.0f)  //Shininess
+	};
+
 	oranges.resize(numOranges);
 	std::vector<Vector3> positions;
 	for (Orange& orange : oranges)
@@ -29,7 +37,7 @@ OrangesManager::OrangesManager(int meshId, int textureId) : m_meshId(meshId), m_
 	}
 
 	// Create the InstancedObjectNode for rendering
-	orangesNode = new InstancedObjectNode(m_meshId, m_textureId, positions);
+	orangesNode = new InstancedObjectNode(m_meshId, m_textureId, orangeMaterial, positions);
 }
 
 

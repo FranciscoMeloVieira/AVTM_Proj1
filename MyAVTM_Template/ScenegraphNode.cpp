@@ -93,6 +93,7 @@ void MeshNode::draw() {
 	data.vm = mu.get(gmu::VIEW_MODEL);
 	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
 	data.normal = mu.getNormalMatrix();
+	data.material = material;
 
 	renderer.renderMesh(data);
 
@@ -127,7 +128,7 @@ void ScenegraphNode::setTransform(
 	mu.popMatrix(gmu::MODEL);
 }
 
-InstancedObjectNode::InstancedObjectNode(int meshId, int textureId, const std::vector<Vector3>& positions) : meshId(meshId), textureId(textureId), positions(positions)
+InstancedObjectNode::InstancedObjectNode(int meshId, int textureId, Material material, const std::vector<Vector3>& positions) : meshId(meshId), textureId(textureId), material(material), positions(positions)
 {
 	instanceCount = static_cast<int>(positions.size());
 
@@ -159,6 +160,7 @@ void InstancedObjectNode::draw()
 	data.vm = mu.get(gmu::VIEW_MODEL);
 	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
 	data.normal = mu.getNormalMatrix();
+	data.material = material;
 
 	renderer.renderMeshInstanced(data, instanceCount);
 

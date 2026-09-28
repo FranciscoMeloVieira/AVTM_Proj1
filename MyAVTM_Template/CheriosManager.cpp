@@ -10,6 +10,15 @@ extern gmu mu;
 CheeriosManager::CheeriosManager(int meshId, int textureId, float spacing)
     : m_meshId(meshId), m_textureId(textureId)
 {
+    //Based on yellow rubber
+    Material cheerioMaterial = {
+        { 0.5f, 0.5f, 0.4f, 1.0f }, //Diffuse
+        { 0.05f, 0.05f, 0.05f, 0.05f }, //Ambient
+        { 0.7f, 0.7f, 0.04f, 1.0f }, //Specular
+        { 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+        (0.08f*128.0f)  //Shininess
+    };
+
     buildTrackBorders();
 
 	std::vector<Vector3> positions;
@@ -18,7 +27,7 @@ CheeriosManager::CheeriosManager(int meshId, int textureId, float spacing)
 		positions.push_back(cheerio.position);
 	}
 
-	cheeriosNode = new InstancedObjectNode(m_meshId, m_textureId, positions);
+	cheeriosNode = new InstancedObjectNode(m_meshId, m_textureId, cheerioMaterial ,positions);
 }
 
 CheeriosManager::~CheeriosManager() {

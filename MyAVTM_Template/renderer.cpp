@@ -238,13 +238,13 @@ void Renderer::renderMesh(const dataMesh& data) {
 
     // send the material
     loc = glGetUniformLocation(program, "mat.ambient");
-    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.ambient);
+    glUniform4fv(loc, 1, data.material.ambient);
     loc = glGetUniformLocation(program, "mat.diffuse");
-    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.diffuse);
+    glUniform4fv(loc, 1, data.material.diffuse);
     loc = glGetUniformLocation(program, "mat.specular");
-    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.specular);
+    glUniform4fv(loc, 1, data.material.specular);
     loc = glGetUniformLocation(program, "mat.shininess");
-    glUniform1f(loc, myMeshes[data.meshID].mat.shininess);
+    glUniform1f(loc, data.material.shininess);
 
     // Render mesh
     if (myMeshes[data.meshID].mat.texCount > 0) {
@@ -330,13 +330,13 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
     glUniformMatrix3fv(normal_loc, 1, GL_FALSE, data.normal);
 
     GLint loc = glGetUniformLocation(program, "mat.ambient");
-    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.ambient);
+    glUniform4fv(loc, 1, data.material.ambient);
     loc = glGetUniformLocation(program, "mat.diffuse");
-    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.diffuse);
+    glUniform4fv(loc, 1, data.material.diffuse);
     loc = glGetUniformLocation(program, "mat.specular");
-    glUniform4fv(loc, 1, myMeshes[data.meshID].mat.specular);
+    glUniform4fv(loc, 1, data.material.specular);
     loc = glGetUniformLocation(program, "mat.shininess");
-    glUniform1f(loc, myMeshes[data.meshID].mat.shininess);
+    glUniform1f(loc, data.material.shininess);
 
     glUniform1i(texMode_loc, data.texMode);
 
