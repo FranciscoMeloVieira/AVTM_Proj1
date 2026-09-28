@@ -45,10 +45,17 @@ uniform vec4 coneDir;
 uniform float spotCosCutOff;
 
 uniform bool transparent;
+uniform bool shadowMode;
 
 out vec4 colorOut;
 
 void main() {
+
+    if (shadowMode) {
+        colorOut = vec4(0.5, 0.5, 0.5, 1.0);
+        return;
+    }
+
 	vec3 n = normalize(DataIn.normal);
 	vec3 e = normalize(DataIn.eye);
 	int lightCount = MAX_LIGHTS;

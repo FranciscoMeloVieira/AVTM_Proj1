@@ -225,8 +225,16 @@ void renderSim(void) {
 		float floorPlane[4] = { 0, 1, 0, 0 };
 		const float* dirLightDirection = lightningSystem->getLight(6).direction; // w must be 0
 
+		glStencilFunc(GL_EQUAL, 0x02, 0x03);
+		glStencilMask(0x02);
+
 		glBlendFunc(GL_DST_COLOR, GL_ZERO);
+		renderer.setShadowMode(true);
 		ShadowSystem::renderShadows(dirLightDirection, floorPlane, sceneRoot);
+		renderer.setShadowMode(false);
+
+		glStencilMask(0x00);
+		glStencilFunc(GL_NOTEQUAL, 0x01, 0x01);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
@@ -550,7 +558,7 @@ int main(int argc, char **argv) {
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE); Teacher said it's fine to disable so we don't complicate sceneGraph, for the future, might be a good idea to go back to this.
 	glEnable(GL_MULTISAMPLE);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);

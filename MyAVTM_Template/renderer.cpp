@@ -157,6 +157,7 @@ bool Renderer::setRenderMeshesShaderProg(const std::string& vertShaderPath, cons
 	tex_loc[3] = glGetUniformLocation(program, "texmap3");
     tex_loc[4] = glGetUniformLocation(program, "texmap4");
     tex_loc[5] = glGetUniformLocation(program, "texmap5");
+    shadowModeLoc = glGetUniformLocation(program, "shadowMode");
 
     return(shader.isProgramLinked() && shader.isProgramValid());
 }
@@ -443,4 +444,8 @@ void Renderer::renderSkybox(const float* projMatrix, const float* viewMatrixNoTr
 
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);
+}
+
+void Renderer::setShadowMode(bool enabled) {
+    glUniform1i(shadowModeLoc, enabled ? 1 : 0);
 }

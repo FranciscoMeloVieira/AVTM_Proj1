@@ -76,6 +76,7 @@ public:
 
   void Renderer::renderMeshFromAssimp(const dataMesh& data);
 
+  void setShadowMode(bool enabled);
 
   /* --- Methods for the skybox (1st attempt) --- */
   GLuint skyboxProgram = 0, skyboxVAO = 0, skyboxVBO = 0, skyboxTexID = 0;
@@ -93,6 +94,8 @@ public:
   Texture TexObjArray;
 
 private:
+
+    GLint shadowModeLoc;
 
   //Render meshes GLSL program
   GLuint program;
