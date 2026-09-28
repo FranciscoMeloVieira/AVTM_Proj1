@@ -115,3 +115,25 @@ bool LightingSystem::isLightActive(int lightIndex)
 const LightCPU& LightingSystem::getLight(int index) const {
 	return lights[index];
 }
+
+void LightingSystem::sendMirroredToShader(const float* viewMatrix, GLuint shaderProg, float floorY) {
+	for (int i = 0; i < MAX_LIGHTS; i++) {
+		float mirroredY = floorY - (lights[i].position[1] - floorY); 
+		float posIn[4] = { lights[i].position[0], mirroredY,
+							lights[i].position[2], lights[i].type == 0 ? 0.0f : 1.0f };
+
+		float mirroredDirY = -lights[i].direction[1]; // direction reflects too (for directional/spot)
+		float dirIn[4] = { lights[i].direction[0], mirroredDirY, lights[i].direction[2], 0.0f };
+
+		float posEye[4], dirEye[4];
+		mat4MulVec4(viewMatrix, posIn, posEye);
+		mat4MulVec4(viewMatrix, dirIn, dirEye);
+
+		glUniform4fv(lightLocs[i].position, 1, posEye);
+		glUniform4fv(lightLocs[i].direction, 1, dirEye);
+		glUniform1f(lightLocs[i].cosCutOff, lights[i].cosCutOff);
+		glUniform1f(lightLocs[i].spotExp, lights[i].spotExp);
+		glUniform1i(lightLocs[i].type, lights[i].type);
+		glUniform1i(lightLocs[i].enabled, lights[i].activated);
+	}
+}

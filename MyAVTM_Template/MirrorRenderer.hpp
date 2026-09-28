@@ -13,8 +13,7 @@ public:
 
     void renderRearMirror(Renderer& renderer, LightingSystem* lightingSystem, EmptyNode* sceneRoot, MeshNode* floorNode,
         const float* carMatrix, int winX, int winY);
-
-    void renderFloorReflection(Renderer& renderer, EmptyNode* sceneRoot, MeshNode* floorNode);
+    void renderFloorReflection(Renderer& renderer, LightingSystem* lightingSystem, EmptyNode* sceneRoot, MeshNode* floorNode);
 
     static void stripTranslation(const float* viewIn, float* viewOut);
 

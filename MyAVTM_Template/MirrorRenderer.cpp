@@ -123,7 +123,7 @@ void MirrorRenderer::renderRearMirror(Renderer& renderer, LightingSystem* lighti
     glViewport(0, 0, winX, winY);
 }
 
-void MirrorRenderer::renderFloorReflection(Renderer& renderer, EmptyNode* sceneRoot, MeshNode* floorNode) {
+void MirrorRenderer::renderFloorReflection(Renderer& renderer, LightingSystem* lightingSystem, EmptyNode* sceneRoot, MeshNode* floorNode) {
 
     beginStencilMask(0x02, 0x02);
     GLuint meshProg = renderer.getMeshShaderProg();
@@ -131,6 +131,8 @@ void MirrorRenderer::renderFloorReflection(Renderer& renderer, EmptyNode* sceneR
     floorNode->draw();
 
     beginMaskedDraw(0x02, 0x03);
+
+    lightingSystem->sendMirroredToShader(mu.get(gmu::VIEW), meshProg);
 
     mu.pushMatrix(gmu::MODEL);
     mu.loadIdentity(gmu::MODEL);
@@ -141,4 +143,6 @@ void MirrorRenderer::renderFloorReflection(Renderer& renderer, EmptyNode* sceneR
     glFrontFace(GL_CCW);
 
     mu.popMatrix(gmu::MODEL);
+
+    lightingSystem->sendToShader(mu.get(gmu::VIEW), meshProg);
 }

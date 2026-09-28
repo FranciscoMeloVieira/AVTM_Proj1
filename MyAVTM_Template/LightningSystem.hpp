@@ -21,6 +21,7 @@ public:
     void initUniforms(GLuint shaderProg);
     void update(const float* carMatrix);
     void sendToShader(const float* viewMatrix, GLuint shaderProg);
+    void sendMirroredToShader(const float* viewMatrix, GLuint shaderProg, float floorY = 0.0f);
 
     /* Control the lights */
     void toggleLight(int index);

@@ -216,7 +216,7 @@ void renderSim(void) {
 	renderer.renderSkybox(mu.get(gmu::PROJECTION), viewNoTrans);
 	renderer.activateRenderMeshesShaderProg();
 	if (currentCamY > 0)
-		mirrorRenderer->renderFloorReflection(renderer, sceneRoot, floorNode);
+		mirrorRenderer->renderFloorReflection(renderer, lightningSystem, sceneRoot, floorNode);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	floorNode->draw();
