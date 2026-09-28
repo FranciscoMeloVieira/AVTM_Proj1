@@ -178,8 +178,6 @@ void renderSim(void) {
 
 	lightningSystem->sendToShader(mu.get(gmu::VIEW), renderer.getMeshShaderProg());
 
-	if(currentCamY > 0)
-		mirrorRenderer->renderFloorReflection(renderer, sceneRoot, floorNode);
 	//Associar os Texture Units aos Objects Texture
 	//stone.tga loaded in TU0; checker.tga loaded in TU1;  lightwood.tga loaded in TU2
 	renderer.setTexUnit(0, 0);
@@ -203,6 +201,12 @@ void renderSim(void) {
 	MirrorRenderer::stripTranslation(mu.get(gmu::VIEW), viewNoTrans);
 	renderer.renderSkybox(mu.get(gmu::PROJECTION), viewNoTrans);
 	renderer.activateRenderMeshesShaderProg();
+	if (currentCamY > 0)
+		mirrorRenderer->renderFloorReflection(renderer, sceneRoot, floorNode);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	floorNode->draw();
+	glDisable(GL_BLEND);
 	GLuint meshProg = renderer.getMeshShaderProg();
 	GLint isTransparentLoc = glGetUniformLocation(meshProg, "transparent");
 	glUniform1i(isTransparentLoc, GL_FALSE);
@@ -211,7 +215,6 @@ void renderSim(void) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glUniform1i(isTransparentLoc, GL_TRUE);
 	sceneRoot->draw();
-	floorNode->draw();
 
 	glDepthFunc(GL_LESS);
 	glDisable(GL_STENCIL_TEST);
