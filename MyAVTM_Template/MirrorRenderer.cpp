@@ -24,8 +24,8 @@ void MirrorRenderer::stripTranslation(const float* viewIn, float* viewOut) {
 void MirrorRenderer::beginStencilMask(unsigned int maskValue, unsigned int maskBits) {
     glEnable(GL_STENCIL_TEST);
     glStencilMask(maskBits);
-    glStencilFunc(GL_ALWAYS, maskValue, maskBits);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilFunc(GL_NEVER, maskValue, maskBits);
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
 }
@@ -138,9 +138,15 @@ void MirrorRenderer::renderFloorReflection(Renderer& renderer, LightingSystem* l
     mu.loadIdentity(gmu::MODEL);
     mu.scale(gmu::MODEL, 1.0f, -1.0f, 1.0f);
 
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0f, -1.0f);
+
     glFrontFace(GL_CW);
     sceneRoot->draw();
     glFrontFace(GL_CCW);
+
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(0.0f, 0.0f);
 
     mu.popMatrix(gmu::MODEL);
 

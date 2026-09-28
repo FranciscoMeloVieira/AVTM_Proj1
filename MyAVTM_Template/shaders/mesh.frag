@@ -117,7 +117,7 @@ void main() {
     vec3 rgbColor = (totalDiffuseSpec * texel + ambientColor * texel + mat.emissive).rgb;
     float finalAlpha = texel.a * mat.diffuse.a;
 
-    if ((finalAlpha == 1.0 && transparent) || (finalAlpha != 1.0 && !transparent) && texMode <= 6) // If floor is called then no discard is needed, it's always called when needed
+    if (texMode <= 6 && ((finalAlpha == 1.0 && transparent) || (finalAlpha != 1.0 && !transparent)))
     {
         discard;
     }
