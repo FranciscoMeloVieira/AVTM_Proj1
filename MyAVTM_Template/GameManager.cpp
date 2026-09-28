@@ -17,6 +17,7 @@ void GameManager::init()
 	car->onOrangeCollision.addListener([this](int damage) {
 		this->takeDamage();
 		});
+	candles = new Candles(3,1);
 
 	butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
 
@@ -25,6 +26,7 @@ void GameManager::init()
 	sceneRoot->addChild(orangesManager->orangesNode);
 	sceneRoot->addChild(cheeriosManager->cheeriosNode);
 	sceneRoot->addChild(butter->butterNode);
+	sceneRoot->addChild(candles->candleNode);
 
 	checkpointManager = new CheckpointManager({
 		{ 0.0f, 0.0f, 50.0f },

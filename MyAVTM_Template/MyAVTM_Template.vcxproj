@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="Butter.h" />
     <ClInclude Include="Camera.hpp" />
+    <ClInclude Include="Candles.hpp" />
     <ClInclude Include="Car.hpp" />
     <ClInclude Include="Checkpoint.h" />
     <ClInclude Include="CheckpointManager.h" />
@@ -189,6 +190,7 @@
     <ClCompile Include="Butter.cpp" />
     <ClCompile Include="CameraFixedOrtho.hpp" />
     <ClCompile Include="CameraFixedPerspective.hpp" />
+    <ClCompile Include="Candles.cpp" />
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="Checkpoint.cpp" />
     <ClCompile Include="CheckpointManager.cpp" />

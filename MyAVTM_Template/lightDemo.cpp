@@ -406,7 +406,7 @@ void buildScene()
 	renderer.myMeshes.push_back(amesh);
 
 	// create geometry and VAO of the cylinder
-	amesh = createCylinder(1.5f, 0.5f, 20);
+	amesh = createCylinder(1.5f*2.0f, 1.0f*0.5f, 20);
 	memcpy(amesh.mat.ambient, amb, 4 * sizeof(float));
 	memcpy(amesh.mat.diffuse, diff, 4 * sizeof(float));
 	memcpy(amesh.mat.specular, spec, 4 * sizeof(float));

@@ -5,6 +5,7 @@
 #include <Car.hpp>
 #include "HUD.h"
 #include <Butter.h>
+#include <Candles.hpp>
 #include <CheckpointManager.h>
 
 class GameManager
@@ -23,6 +24,7 @@ public:
 	CheeriosManager* cheeriosManager;
 	Car* car;
 	Butter* butter;
+	Candles* candles;
 
 	float* getCarMatrix() { return car->carNode->getLocalModelMatrix(); }
 
