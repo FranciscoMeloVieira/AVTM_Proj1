@@ -165,11 +165,6 @@ int lastTime = 0;
 // Render the scene and UI
 // ============================================================================
 void renderSim(void) {
-	if (gameManager->paused) {
-		glutPostRedisplay();
-		lastTime = glutGet(GLUT_ELAPSED_TIME);
-		return;
-	}
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
