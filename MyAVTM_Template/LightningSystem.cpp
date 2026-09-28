@@ -106,3 +106,12 @@ void LightingSystem::toggleDirectionalLights()
 {
 	lights[6].activated = !lights[6].activated;
 }
+
+bool LightingSystem::isLightActive(int lightIndex)
+{
+	return lights[lightIndex].activated;
+}
+
+const LightCPU& LightingSystem::getLight(int index) const {
+	return lights[index];
+}

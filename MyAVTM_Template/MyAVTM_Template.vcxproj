@@ -210,6 +210,8 @@
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="ScenegraphNode.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="ShadowSystem.cpp" />
+    <ClCompile Include="ShadowSystem.hpp" />
     <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>

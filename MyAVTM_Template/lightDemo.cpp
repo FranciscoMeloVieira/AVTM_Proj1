@@ -53,6 +53,7 @@
 #include "LightningSystem.hpp"
 #include "InputManager.hpp"
 #include "MirrorRenderer.hpp"
+#include "ShadowSystem.hpp"
 
 using namespace std;
 
@@ -219,6 +220,16 @@ void renderSim(void) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	floorNode->draw();
+
+	if (currentCamY > 0 && lightningSystem->isLightActive(6)) {
+		float floorPlane[4] = { 0, 1, 0, 0 };
+		const float* dirLightDirection = lightningSystem->getLight(6).direction; // w must be 0
+
+		glBlendFunc(GL_DST_COLOR, GL_ZERO);
+		ShadowSystem::renderShadows(dirLightDirection, floorPlane, sceneRoot);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
 	glDisable(GL_BLEND);
 	GLuint meshProg = renderer.getMeshShaderProg();
 	GLint isTransparentLoc = glGetUniformLocation(meshProg, "transparent");

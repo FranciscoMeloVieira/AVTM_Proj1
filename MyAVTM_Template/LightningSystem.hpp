@@ -27,6 +27,12 @@ public:
     void togglePointlights();
     void toggleSpotLights();
     void toggleDirectionalLights();
+
+    bool isLightActive(int lightIndex);
+
+    const LightCPU& getLight(int index) const;
+    
+
 private:
     static constexpr int MAX_LIGHTS = 9;
     LightCPU lights[MAX_LIGHTS];
