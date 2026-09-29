@@ -449,16 +449,25 @@ void buildScene()
 	amesh.mat.texCount = texcount;
 	renderer.myMeshes.push_back(amesh);
 
-	Assimp::Importer carImporter;
+	Assimp::Importer importer;
 	const aiScene* carScene = nullptr;
+	const aiScene* candleScene = nullptr;
 	float carScaleFactor;
+	float candleScaleFactor = 10000.0f;
 
 	strcpy(model_dir, "assets/car/"); // Import3DFromFile expects this global set beforehand
-	if (!Import3DFromFile("assets/car/car.obj", carImporter, carScene, carScaleFactor)) {
+	if (!Import3DFromFile("assets/car/car.obj", importer, carScene, carScaleFactor)) {
 		cerr << "Failed to load car.obj\n";
 	}
 
 	createMyMeshFromAssimp(carScene, &renderer);
+
+	strcpy(model_dir, "assets/candle/"); // Import3DFromFile expects this global set beforehand	
+	if (!Import3DFromFile("assets/candle/candle.obj", importer, candleScene, candleScaleFactor)) {
+		cerr << "Failed to load candle.obj\n";
+	}
+
+	createMyMeshFromAssimp(candleScene, &renderer);
 
 	buildSceneGraph();
 

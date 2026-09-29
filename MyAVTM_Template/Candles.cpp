@@ -36,6 +36,10 @@ Candles::Candles(int meshId, int textureId) : m_meshId(meshId), m_textureId(text
 		*/
 
 	candleNode = new InstancedObjectNode(m_meshId, m_textureId, candleMaterial, positions);
+	candleNode->setTransform(
+		0.0f, 0.0f, 0.0f,    // position
+		90.0f, 0.0f, -90.0f,   // rotation — X axis, not Y
+		30.0f, 30.0f, 30.0f);
 }
 
 
