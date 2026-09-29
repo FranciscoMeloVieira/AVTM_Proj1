@@ -38,10 +38,10 @@ uniform sampler2D texmap2;
 uniform sampler2D texmap3;
 uniform sampler2D texmap4;
 uniform sampler2D texmap5;
+uniform sampler2D normalMap;
 
 uniform int texMode;
 uniform bool spotlight_mode;
-uniform vec4 coneDir;
 uniform float spotCosCutOff;
 
 uniform bool transparent;
@@ -50,13 +50,21 @@ uniform bool shadowMode;
 out vec4 colorOut;
 
 void main() {
+    vec3 n;
 
     if (shadowMode) {
         colorOut = vec4(0.5, 0.5, 0.5, 1.0);
         return;
     }
 
-	vec3 n = normalize(DataIn.normal);
+    if(texMode == 9){  // lookup normal from normal map, move from [0,1] to [-1, 1] range, normalize
+
+        n = normalize(2 * texture(normalMap, DataIn.tex_coord * 0.2).rgb - 1.0);
+
+        }
+    else {
+        n = normalize(DataIn.normal); }
+
 	vec3 e = normalize(DataIn.eye);
 	int lightCount = MAX_LIGHTS;
 	vec4 totalDiffuseSpec = vec4(0.0);
@@ -68,6 +76,8 @@ void main() {
 
         if (lights[i].type == 0) {
             l = normalize(lights[i].direction.xyz);
+
+            if(texMode == 9) l = normalize(DataIn.lightDir);
         } else {
             vec3 lightDir = lights[i].position.xyz + DataIn.eye; 
             float dist = length(lightDir);
@@ -107,6 +117,8 @@ void main() {
         texel = texture(texmap4, DataIn.tex_coord / 2.0);
     } else if (texMode == 5) {
         texel = texture(texmap5, DataIn.tex_coord / 2.0);
+    } else if (texMode == 9) { //normalMap
+    	texel = texture(texmap4, DataIn.tex_coord / 2.0); 
     } else {
         texel = texture(texmap2, DataIn.tex_coord);
         texel1 = texture(texmap3, DataIn.tex_coord);
