@@ -17,12 +17,12 @@ Candles::Candles(int meshId, int textureId) : m_meshId(meshId), m_textureId(text
 	};
 
 	std::vector<Vector3> positions = {
-		{ 50.0f, 1.0f, -150.0f},
-		{ 250.0f, 1.0f, -150.0f},
-		{ 50.0f, 1.0f, 150.0f},
-		{ 250.0f, 1.0f, 150.0f},
-		{ 150.0f, 1.0f,  0.0f},
-		{ -50.0f, 1.0f, -200.0f} };
+		{ 50.0f, 0.0f, -150.0f},
+		{ 300.0f, 0.0f, -150.0f},
+		{ 50.0f, 0.0f, 150.0f},
+		{ 250.0f, 0.0f, 150.0f},
+		{ 150.0f, 0.0f,  0.0f},
+		{ -50.0f, 0.0f, -200.0f} };
 
 	/*for (Candle& candle : candles)
 	{
