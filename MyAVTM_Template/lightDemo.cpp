@@ -452,8 +452,8 @@ void buildScene()
 	Assimp::Importer importer;
 	const aiScene* carScene = nullptr;
 	const aiScene* candleScene = nullptr;
-	float carScaleFactor;
-	float candleScaleFactor = 10000.0f;
+	float carScaleFactor = 1.0;
+	float candleScaleFactor = 1.0f;
 
 	strcpy(model_dir, "assets/car/"); // Import3DFromFile expects this global set beforehand
 	if (!Import3DFromFile("assets/car/car.obj", importer, carScene, carScaleFactor)) {

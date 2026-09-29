@@ -158,6 +158,7 @@ bool Renderer::setRenderMeshesShaderProg(const std::string& vertShaderPath, cons
     tex_loc[4] = glGetUniformLocation(program, "texmap4");
     tex_loc[5] = glGetUniformLocation(program, "texmap5");
     shadowModeLoc = glGetUniformLocation(program, "shadowMode");
+    model_loc = glGetUniformLocation(program, "m_model");
 
     return(shader.isProgramLinked() && shader.isProgramValid());
 }
@@ -236,6 +237,8 @@ void Renderer::renderMesh(const dataMesh& data) {
     glUniformMatrix4fv(vm_loc, 1, GL_FALSE, data.vm);
     glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, data.pvm);
     glUniformMatrix3fv(normal_loc, 1, GL_FALSE, data.normal);
+    static const float IDENTITY[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, IDENTITY);
 
     // send the material
     loc = glGetUniformLocation(program, "mat.ambient");
@@ -329,6 +332,8 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
     glUniformMatrix4fv(vm_loc, 1, GL_FALSE, data.vm);
     glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, data.pvm);
     glUniformMatrix3fv(normal_loc, 1, GL_FALSE, data.normal);
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE,
+        data.model);
 
     GLint loc = glGetUniformLocation(program, "mat.ambient");
     glUniform4fv(loc, 1, data.material.ambient);
