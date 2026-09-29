@@ -344,7 +344,19 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
     loc = glGetUniformLocation(program, "mat.shininess");
     glUniform1f(loc, data.material.shininess);
 
-    glUniform1i(texMode_loc, data.texMode);
+    if (myMeshes[data.meshID].mat.texCount > 0) {
+        for (int i = 0; i < myMeshes[data.meshID].mat.texCount; i++) {
+            GLuint TU = myMeshes[data.meshID].texUnits[i];
+            glActiveTexture(GL_TEXTURE0 + TU);
+            glBindTexture(GL_TEXTURE_2D, TexObjArray.getTextureId(TU));
+            if (myMeshes[data.meshID].texTypes[i] == DIFFUSE)
+                glUniform1i(tex_loc[0], TU);
+        }
+        glUniform1i(texMode_loc, 2);
+    }
+    else {
+        glUniform1i(texMode_loc, data.texMode);
+    }
 
     glBindVertexArray(myMeshes[data.meshID].vao);
     glEnableVertexAttribArray(3);

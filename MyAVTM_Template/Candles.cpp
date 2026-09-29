@@ -8,12 +8,12 @@ extern gmu mu;
 
 Candles::Candles(int meshId, int textureId) : m_meshId(meshId), m_textureId(textureId)
 {
-	Material candleMaterial = { //TODO - Change
-	{ 0.5f, 0.4f, 0.4f, 1.0f }, //Diffuse
-	{ 0.05f, 0.05f, 0.05f, 1.0f }, //Ambient
-	{ 0.4f, 0.7f, 0.04f, 1.0f }, //Specular
-	{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
-	(0.08f * 128.0f)  //Shininess
+	Material candleMaterial = {
+	{ 0.8f, 0.8f, 0.8f, 1.0f },
+	{ 0.2f, 0.2f, 0.2f, 1.0f },
+	{ 0.2f, 0.2f, 0.2f, 1.0f },
+	{ 0.0f, 0.0f, 0.0f, 1.0f },
+	20.0f
 	};
 
 	std::vector<Vector3> positions = {
