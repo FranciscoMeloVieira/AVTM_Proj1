@@ -161,6 +161,7 @@ void InstancedObjectNode::draw()
 	data.pvm = mu.get(gmu::PROJ_VIEW_MODEL);
 	data.normal = mu.getNormalMatrix();
 	data.material = material;
+	data.model = localTransform;
 
 	renderer.renderMeshInstanced(data, instanceCount);
 

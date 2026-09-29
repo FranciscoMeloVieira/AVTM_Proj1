@@ -365,3 +365,6 @@ FodyWeavers.xsd
 !Dependencies/
 !Dependencies/**
 
+!assets/
+!assets/**
+
