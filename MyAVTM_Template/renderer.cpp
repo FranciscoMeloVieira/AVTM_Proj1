@@ -159,6 +159,7 @@ bool Renderer::setRenderMeshesShaderProg(const std::string& vertShaderPath, cons
     tex_loc[5] = glGetUniformLocation(program, "texmap5");
     tex_loc[6] = glGetUniformLocation(program, "normalMap");
     shadowModeLoc = glGetUniformLocation(program, "shadowMode");
+    model_loc = glGetUniformLocation(program, "m_model");
 
     return(shader.isProgramLinked() && shader.isProgramValid());
 }
@@ -237,6 +238,8 @@ void Renderer::renderMesh(const dataMesh& data) {
     glUniformMatrix4fv(vm_loc, 1, GL_FALSE, data.vm);
     glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, data.pvm);
     glUniformMatrix3fv(normal_loc, 1, GL_FALSE, data.normal);
+    static const float IDENTITY[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, IDENTITY);
 
     // send the material
     loc = glGetUniformLocation(program, "mat.ambient");
@@ -330,6 +333,8 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
     glUniformMatrix4fv(vm_loc, 1, GL_FALSE, data.vm);
     glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, data.pvm);
     glUniformMatrix3fv(normal_loc, 1, GL_FALSE, data.normal);
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE,
+        data.model);
 
     GLint loc = glGetUniformLocation(program, "mat.ambient");
     glUniform4fv(loc, 1, data.material.ambient);
@@ -340,7 +345,19 @@ void Renderer::renderMeshInstanced(const dataMesh& data, GLsizei instanceCount) 
     loc = glGetUniformLocation(program, "mat.shininess");
     glUniform1f(loc, data.material.shininess);
 
-    glUniform1i(texMode_loc, data.texMode);
+    if (myMeshes[data.meshID].mat.texCount > 0) {
+        for (int i = 0; i < myMeshes[data.meshID].mat.texCount; i++) {
+            GLuint TU = myMeshes[data.meshID].texUnits[i];
+            glActiveTexture(GL_TEXTURE0 + TU);
+            glBindTexture(GL_TEXTURE_2D, TexObjArray.getTextureId(TU));
+            if (myMeshes[data.meshID].texTypes[i] == DIFFUSE)
+                glUniform1i(tex_loc[0], TU);
+        }
+        glUniform1i(texMode_loc, 2);
+    }
+    else {
+        glUniform1i(texMode_loc, data.texMode);
+    }
 
     glBindVertexArray(myMeshes[data.meshID].vao);
     glEnableVertexAttribArray(3);

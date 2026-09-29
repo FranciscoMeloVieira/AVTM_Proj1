@@ -3,6 +3,7 @@
 uniform mat4 m_pvm;
 uniform mat4 m_viewModel;
 uniform mat3 m_normal;
+uniform mat4 m_model;
 
 uniform vec4 l_pos;
 uniform int texMode;
@@ -22,12 +23,11 @@ out Data {
 } DataOut;
 
 void main () {
+	vec4 worldPos = m_model * position + vec4(instancePos, 0.0);
+	vec4 pos = m_viewModel * worldPos;
 
-	vec4 instancePosition = position + vec4(instancePos, 0.0);
-	vec4 pos = m_viewModel * instancePosition;
-
-	vec3 n = normalize(m_normal * normal.xyz);
-	DataOut.normal = n;
+	DataOut.normal = normalize(m_normal * mat3(m_model) * normal.xyz);
+	vec3 n = DataOut.normal;
 	DataOut.lightDir = vec3(l_pos - pos);
 	DataOut.eye = vec3(-pos);
 	DataOut.tex_coord = texCoord.st;
@@ -50,5 +50,5 @@ void main () {
 			DataOut.eye = normalize(aux);
 		}
 
-	gl_Position = m_pvm * instancePosition;	
+	gl_Position = m_pvm * worldPos;	
 }

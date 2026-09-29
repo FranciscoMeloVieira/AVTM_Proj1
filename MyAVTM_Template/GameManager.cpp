@@ -17,7 +17,7 @@ void GameManager::init()
 	car->onOrangeCollision.addListener([this](int damage) {
 		this->takeDamage();
 		});
-	candles = new Candles(3,1);
+	candles = new Candles(7,0);
 
 	butter = new Butter(0, 1, { 0.0f, 0.0f, 50.0f });
 
