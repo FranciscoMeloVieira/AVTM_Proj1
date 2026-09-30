@@ -7,7 +7,7 @@
 #define BUTTER_HEIGHT 5.0f
 #define BUTTER_DEPTH 5.0f
 #define BUTTER_SPEED 5.0f
-#define BUTTER_TEXTURE_MODE 9
+#define BUTTER_TEXTURE_MODE 4
 
 
 

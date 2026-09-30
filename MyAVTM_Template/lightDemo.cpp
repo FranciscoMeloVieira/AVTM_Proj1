@@ -200,7 +200,6 @@ void renderSim(void) {
 	renderer.setTexUnit(3, 3);
 	renderer.setTexUnit(4, 4);
 	renderer.setTexUnit(5, 5);
-	renderer.setTexUnit(6, 6); //NormalMap
 
 	// load identity matrices
 	mu.loadIdentity(gmu::MODEL);
@@ -274,7 +273,7 @@ void buildSceneGraph() {
 	sceneRoot = new EmptyNode();
 
 	// Create and add floor
-	MeshNode* floor = new MeshNode(0, 10, defaultMaterial);  // meshID=0, texMode=10
+	MeshNode* floor = new MeshNode(0, 10, defaultMaterial);  // meshID=0, texMode=1
 	floor->setAbsolutePosition(150.0f, 0.0f, 0.0f);
 	floor->setScale(400.0f, 0.1f, 400.0f);
 	floor->translate(-0.5f, -1.0f, -0.5f);  // Center cube at origin
@@ -290,7 +289,6 @@ void buildSceneGraph() {
 
 	EmptyNode* racetrack = new EmptyNode();
 	sceneRoot->addChild(racetrack);
-
 
 	MeshNode* trackSegment = new MeshNode(0, 4, asphaltMaterial); 
 	trackSegment->setTransform(
@@ -374,7 +372,6 @@ void buildScene()
 	renderer.TexObjArray.texture2D_Loader("assets/orange.png");
 	renderer.TexObjArray.texture2D_Loader("assets/road.jpg");
 	renderer.TexObjArray.texture2D_Loader("assets/Tire.png");
-	renderer.TexObjArray.texture2D_Loader("assets/normalmap.tga");
 
 	//Scene geometry with triangle meshes
 
