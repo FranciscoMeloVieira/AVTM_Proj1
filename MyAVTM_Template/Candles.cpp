@@ -8,21 +8,21 @@ extern gmu mu;
 
 Candles::Candles(int meshId, int textureId) : m_meshId(meshId), m_textureId(textureId)
 {
-	Material candleMaterial = {
-	{ 0.8f, 0.8f, 0.8f, 1.0f },
-	{ 0.2f, 0.2f, 0.2f, 1.0f },
-	{ 0.2f, 0.2f, 0.2f, 1.0f },
-	{ 0.0f, 0.0f, 0.0f, 1.0f },
-	20.0f
+	Material candleMaterial = { //TODO - Change
+	{ 0.5f, 0.4f, 0.4f, 1.0f }, //Diffuse
+	{ 0.05f, 0.05f, 0.05f, 1.0f }, //Ambient
+	{ 0.4f, 0.7f, 0.04f, 1.0f }, //Specular
+	{ 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
+	(0.08f * 128.0f)  //Shininess
 	};
 
 	std::vector<Vector3> positions = {
-		{ 50.0f, 0.0f, -150.0f},
-		{ 300.0f, 0.0f, -150.0f},
-		{ 50.0f, 0.0f, 150.0f},
-		{ 250.0f, 0.0f, 150.0f},
-		{ 150.0f, 0.0f,  0.0f},
-		{ -50.0f, 0.0f, -200.0f} };
+		{ 50.0f, 1.0f, -150.0f},
+		{ 250.0f, 1.0f, -150.0f},
+		{ 50.0f, 1.0f, 150.0f},
+		{ 250.0f, 1.0f, 150.0f},
+		{ 150.0f, 1.0f,  0.0f},
+		{ -50.0f, 1.0f, -200.0f} };
 
 	/*for (Candle& candle : candles)
 	{
@@ -36,10 +36,6 @@ Candles::Candles(int meshId, int textureId) : m_meshId(meshId), m_textureId(text
 		*/
 
 	candleNode = new InstancedObjectNode(m_meshId, m_textureId, candleMaterial, positions);
-	candleNode->setTransform(
-		0.0f, 0.0f, 0.0f,    // position
-		0.0f, 0.0f, 0.0f,   // rotation — X axis, not Y
-		20.0f, 20.0f, 20.0f);
 }
 
 

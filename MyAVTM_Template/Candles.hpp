@@ -21,4 +21,5 @@ public:
 private:
 	int m_meshId;
 	int m_textureId;
+	GLuint instanceVBO = 4;
 };

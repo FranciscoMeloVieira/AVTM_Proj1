@@ -22,7 +22,6 @@ struct dataMesh {
         { 0.0f, 0.0f, 0.0f, 1.0f }, //Emissive
         10.0f  //Shininess
   };
-  float *model;
 };
 
 enum class Align {
@@ -104,7 +103,7 @@ private:
   // Text font rasterizer GLSL program
   GLuint textProgram;
 
-  GLint pvm_loc, vm_loc, normal_loc, lpos_loc, texMode_loc, model_loc, view_loc, proj_loc;
+  GLint pvm_loc, vm_loc, normal_loc, lpos_loc, texMode_loc;
   GLint tex_loc[MAX_TEXTURES];
 
   //render font GLSL program variable locations and VAO
