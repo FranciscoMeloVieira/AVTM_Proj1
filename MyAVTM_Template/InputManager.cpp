@@ -18,6 +18,7 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
         camX = r * sinf(alpha * 3.14f / 180.0f) * cosf(_beta * 3.14f / 180.0f);
         camZ = r * cosf(alpha * 3.14f / 180.0f) * cosf(_beta * 3.14f / 180.0f);
         camY = r * sinf(_beta * 3.14f / 180.0f);
+        gameManager->resetGame();
         break;
 
     case 'w':
