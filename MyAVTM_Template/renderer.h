@@ -79,6 +79,8 @@ public:
 
   void setShadowMode(bool enabled);
 
+  void setFogActive(bool enabled);
+
   /* --- Methods for the skybox (1st attempt) --- */
   GLuint skyboxProgram = 0, skyboxVAO = 0, skyboxVBO = 0, skyboxTexID = 0;
   GLint skyboxProj_loc = -1, skyboxView_loc = -1;
@@ -104,7 +106,7 @@ private:
   // Text font rasterizer GLSL program
   GLuint textProgram;
 
-  GLint pvm_loc, vm_loc, normal_loc, lpos_loc, texMode_loc, model_loc, view_loc, proj_loc;
+  GLint pvm_loc, vm_loc, normal_loc, lpos_loc, texMode_loc, model_loc, view_loc, proj_loc, fogActive_loc;
   GLint tex_loc[MAX_TEXTURES];
 
   //render font GLSL program variable locations and VAO

@@ -46,6 +46,7 @@ uniform float spotCosCutOff;
 
 uniform bool transparent;
 uniform bool shadowMode;
+uniform bool fogActive;
 
 out vec4 colorOut;
 
@@ -121,9 +122,11 @@ void main() {
     {
         discard;
     }
-
-	float dist = length(DataIn.eye);
-    float fogAmount = clamp((300.0 - dist) / (300.0 - 50.0), 0.0, 1.0);
-    vec3 foggedRGB = mix(vec3(0.4784, 0.6863, 0.7765), rgbColor, fogAmount);
-    colorOut = vec4(foggedRGB, finalAlpha);
+    colorOut = vec4(rgbColor, finalAlpha);
+	 if(fogActive) {
+    	float dist = length(DataIn.eye);
+        float fogAmount = clamp((300.0 - dist) / (300.0 - 50.0), 0.0, 1.0);
+        vec3 foggedRGB = mix(vec3(0.4784, 0.6863, 0.7765), rgbColor, fogAmount);
+        colorOut = vec4(foggedRGB, finalAlpha);
+    }
 }

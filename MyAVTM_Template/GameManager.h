@@ -27,8 +27,14 @@ public:
 	Candles* candles;
 
 	float* getCarMatrix() { return car->carNode->getLocalModelMatrix(); }
+	void toggleRearMirror() { rearMirrorRender = !rearMirrorRender; }
+	bool shouldRearMirrorRender() { return rearMirrorRender; }
+	void toggleFog();
 
 	bool paused = false;
+
+	bool rearMirrorRender = true;
+	bool fogActive = true;
 
 	int lives = 5;
 	int points = 0;
