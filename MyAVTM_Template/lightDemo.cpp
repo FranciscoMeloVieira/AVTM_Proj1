@@ -12,7 +12,6 @@
 // Author: Jo�o Madeiras Pereira
 //
 
-/*TODO*/
 // E suposto ter o culling ligado 24/7 por causa da transparencia
 // Chão transparente faz com que a skybox passe, e por baixo dá para ver
 // Há problema de na rearMirror não haja objetos transparentes?
@@ -41,7 +40,6 @@
 #include "texture.h"
 #include <ScenegraphNode.h>
 
-/*TODO*/
 #include "Car.hpp"
 #include "Camera.hpp"
 #include "CameraFixedPerspective.hpp"
@@ -63,7 +61,6 @@ int WinX = 640, WinY = 480;
 
 unsigned int FrameCount = 0;
 
-/*TODO - make better pls*/
 GameManager* gameManager = nullptr;
 LightingSystem* lightningSystem = nullptr;
 InputManager* inputManager = nullptr;
@@ -285,7 +282,6 @@ void buildSceneGraph() {
 	gameManager = new GameManager(sceneRoot);
 
 
-	/*TODO - Maybe change location*/
 	camera1 = new CameraFixedOrtho(200.0f, 0.1f, 1000.0f);
 	camera2 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
 	camera3 = new CameraFixedPerspective(90.0f, 0.1f, 1000.0f);
