@@ -158,6 +158,7 @@ bool Renderer::setRenderMeshesShaderProg(const std::string& vertShaderPath, cons
     tex_loc[4] = glGetUniformLocation(program, "texmap4");
     tex_loc[5] = glGetUniformLocation(program, "texmap5");
     shadowModeLoc = glGetUniformLocation(program, "shadowMode");
+    fogActive_loc = glGetUniformLocation(program, "fogActive");
 
     return(shader.isProgramLinked() && shader.isProgramValid());
 }
@@ -448,4 +449,8 @@ void Renderer::renderSkybox(const float* projMatrix, const float* viewMatrixNoTr
 
 void Renderer::setShadowMode(bool enabled) {
     glUniform1i(shadowModeLoc, enabled ? 1 : 0);
+}
+
+void Renderer::setFogActive(bool enabled) {
+    glUniform1i(fogActive_loc, enabled ? 1 : 0);
 }

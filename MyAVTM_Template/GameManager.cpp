@@ -87,3 +87,8 @@ void GameManager::resetGame()
 		hud->setGameOver(false);
 	}
 }
+
+void GameManager::toggleFog()
+{
+	fogActive = !fogActive;
+}

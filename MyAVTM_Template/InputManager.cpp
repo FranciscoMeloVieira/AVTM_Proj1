@@ -61,6 +61,12 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
     case 'c':
         lightingSystem->togglePointlights();
         break;
+    case 'b':
+        gameManager->toggleRearMirror();
+        break;
+    case 'f':
+        gameManager->toggleFog();
+        break;
     }
 }
 

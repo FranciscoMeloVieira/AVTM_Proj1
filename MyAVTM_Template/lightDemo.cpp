@@ -173,12 +173,15 @@ void renderSim(void) {
 	lightningSystem->update(gameManager->getCarMatrix());
 
 	FrameCount++;
+	glStencilMask(0xFF);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 
 
 	renderer.activateRenderMeshesShaderProg(); // use the required GLSL program to draw the meshes with illumination
-	mirrorRenderer->renderRearMirror(renderer, lightningSystem, sceneRoot, floorNode, gameManager->getCarMatrix(), WinX, WinY);
+	renderer.setFogActive(gameManager->fogActive);
+	if(gameManager->shouldRearMirrorRender())
+		mirrorRenderer->renderRearMirror(renderer, lightningSystem, sceneRoot, floorNode, gameManager->getCarMatrix(), WinX, WinY);
 	float currentCamY = 0.0f;
 	if (inputManager->getActiveCamera() == camera3) {
 		float* carPos = gameManager->getCarMatrix();
