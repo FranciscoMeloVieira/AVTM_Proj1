@@ -1,4 +1,5 @@
 #include "GameManager.h"
+#include "CameraPathInput.h"
 #include <iostream>
 #include <GL/freeglut.h>
 
@@ -7,6 +8,15 @@ GameManager::GameManager(EmptyNode* sceneRoot)
 	this->sceneRoot = sceneRoot;
 	hud = new HUD();
 	this->init();
+}
+
+GameManager::~GameManager()
+{
+	if (cameraPathInput)
+	{
+		delete cameraPathInput;
+		cameraPathInput = nullptr;
+	}
 }
 
 void GameManager::init()
@@ -57,10 +67,20 @@ void GameManager::init()
 	pathVisualizer = new PathVisualizer();
 	sceneRoot->addChild(pathVisualizer);
 	loadTestPath(0);
+
+	cameraPathInput = new CameraPathInput(this, &pathEditor, pathVisualizer);
+	cameraPathInput->start(0);
+	enterPathEditor();
 }
 
 void GameManager::update(float deltaTime)
 {
+	int winW = glutGet(GLUT_WINDOW_WIDTH);
+	int winH = glutGet(GLUT_WINDOW_HEIGHT);
+	if (cameraPathInput)
+	{
+		cameraPathInput->update(deltaTime, winW, winH);
+	}
 	if (hud) {
 		hud->setLives(lives);
 		hud->setPoints(points);
@@ -333,6 +353,10 @@ void GameManager::confirmEditorPath()
 void GameManager::clearEditorPath()
 {
 	pathEditor.clear();
+	if (cameraPathInput)
+	{
+		cameraPathInput->clearTrail();
+	}
 	if (pathVisualizer)
 	{
 		pathVisualizer->clearRawSamples();

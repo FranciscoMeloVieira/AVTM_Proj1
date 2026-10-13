@@ -21,10 +21,12 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
         case ' ':  // Space
         case 'y':
         case 'Y':
-            gameManager->confirmEditorPath();
-            return;
         case 'c':
         case 'C':
+            gameManager->confirmEditorPath();
+            return;
+        case 'x':
+        case 'X':
             gameManager->clearEditorPath();
             return;
         case 'l':
@@ -60,20 +62,10 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
         break;
 
     case 'w':
-        if (gameManager->getControlMode() == ControlMode::WASD)
-            gameManager->car->isAccelerating = true;
-        break;
     case 's':
-        if (gameManager->getControlMode() == ControlMode::WASD)
-            gameManager->car->isDecelerating = true;
-        break;
     case 'a':
-        if (gameManager->getControlMode() == ControlMode::WASD)
-            gameManager->car->steering = 1.0f;
-        break;
     case 'd':
-        if (gameManager->getControlMode() == ControlMode::WASD)
-            gameManager->car->steering = -1.0f;
+        // WASD disabled in this version as requested
         break;
 
     case 'm':

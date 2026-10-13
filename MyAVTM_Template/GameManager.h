@@ -101,5 +101,9 @@ public:
 	void onEditorMouseDrag(int x, int y, int winW, int winH);
 	void onEditorMouseUp(int x, int y, int winW, int winH);
 
+	// OpenCV Finger Path Input (Stage 3)
+	class CameraPathInput* cameraPathInput = nullptr;
+	CameraPathInput* getCameraPathInput() const { return cameraPathInput; }
+
 private:
 };

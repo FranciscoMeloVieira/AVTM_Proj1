@@ -24,6 +24,10 @@ public:
     // Updates the current progress / closest point position
     void setProgressPosition(const Vector3& pos);
 
+    // Updates the current finger / mouse cursor position
+    void setCursorPosition(const Vector3& pos, bool isPinching);
+    void hideCursor();
+
     // Visibility toggles
     void setEnabled(bool enabled);
     bool isEnabled() const { return isVisible; }
@@ -34,6 +38,7 @@ private:
     MeshNode* m_progressMarker = nullptr;
     MeshNode* m_startMarker = nullptr;
     MeshNode* m_endMarker = nullptr;
+    MeshNode* m_cursorMarker = nullptr;
 
     InstancedObjectNode* m_waypointsNode = nullptr;
     InstancedObjectNode* m_rawSamplesNode = nullptr;

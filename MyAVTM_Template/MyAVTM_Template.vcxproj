@@ -71,12 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)Dependencies\devil\include;$(ProjectDir)Dependencies\freeglut\include;$(ProjectDir)Dependencies\glew\include;$(ProjectDir)Dependencies\assimp\include;$(ProjectDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Dependencies\lib\$(Platform);$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\opencv\build\include;$(ProjectDir)Dependencies\devil\include;$(ProjectDir)Dependencies\freeglut\include;$(ProjectDir)Dependencies\glew\include;$(ProjectDir)Dependencies\assimp\include;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>C:\opencv\build\x64\vc16\lib;$(ProjectDir)Dependencies\lib\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)Dependencies\devil\include;$(ProjectDir)Dependencies\freeglut\include;$(ProjectDir)Dependencies\glew\include;$(ProjectDir)Dependencies\assimp\include;$(ProjectDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Dependencies\lib\$(Platform);$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\opencv\build\include;$(ProjectDir)Dependencies\devil\include;$(ProjectDir)Dependencies\freeglut\include;$(ProjectDir)Dependencies\glew\include;$(ProjectDir)Dependencies\assimp\include;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>C:\opencv\build\x64\vc16\lib;$(ProjectDir)Dependencies\lib\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -90,9 +90,6 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Manifest>
-      <EnableSegmentHeap>true</EnableSegmentHeap>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -108,9 +105,6 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Manifest>
-      <EnableSegmentHeap>true</EnableSegmentHeap>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -123,11 +117,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;DevIL.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world500d.lib;freeglut.lib;glew32.lib;DevIL.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Manifest>
-      <EnableSegmentHeap>true</EnableSegmentHeap>
-    </Manifest>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)Dependencies\lib\$(Platform)\*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
@@ -145,11 +136,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;DevIL.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world500.lib;freeglut.lib;glew32.lib;DevIL.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Manifest>
-      <EnableSegmentHeap>true</EnableSegmentHeap>
-    </Manifest>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)Dependencies\lib\$(Platform)\*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
@@ -183,6 +171,7 @@
     <ClInclude Include="stb_rect_pack.h" />
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="texture.h" />
+    <ClInclude Include="UdpTrackingReceiver.h" />
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Path.h" />
     <ClInclude Include="PathFollower.h" />
@@ -191,6 +180,9 @@
     <ClInclude Include="PathProcessor.h" />
     <ClInclude Include="PathEditor.h" />
     <ClInclude Include="PathProcessorTests.h" />
+    <ClInclude Include="CameraCapture.h" />
+    <ClInclude Include="FingerTracker.h" />
+    <ClInclude Include="CameraPathInput.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basic_geometry.cpp" />
@@ -226,6 +218,10 @@
     <ClCompile Include="PathProcessor.cpp" />
     <ClCompile Include="PathEditor.cpp" />
     <ClCompile Include="PathProcessorTests.cpp" />
+    <ClCompile Include="CameraCapture.cpp" />
+    <ClCompile Include="FingerTracker.cpp" />
+    <ClCompile Include="CameraPathInput.cpp" />
+    <ClCompile Include="UdpTrackingReceiver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\mesh.frag" />

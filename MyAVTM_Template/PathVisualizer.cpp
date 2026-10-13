@@ -63,12 +63,25 @@ PathVisualizer::PathVisualizer()
     m_endMarker->setScale(2.2f, 2.2f, 2.2f);
     m_endMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
     addChild(m_endMarker);
+
+    // Cursor marker sphere for finger / mouse position (index 4)
+    Material cursorMaterial = {
+        { 0.0f, 0.9f, 1.0f, 1.0f }, // Diffuse
+        { 0.0f, 0.3f, 0.5f, 1.0f }, // Ambient
+        { 0.5f, 0.9f, 1.0f, 1.0f }, // Specular
+        { 0.2f, 0.9f, 1.0f, 1.0f }, // Emissive
+        25.0f                       // Shininess
+    };
+    m_cursorMarker = new MeshNode(2, 0, cursorMaterial);
+    m_cursorMarker->setScale(2.2f, 2.2f, 2.2f);
+    m_cursorMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
+    addChild(m_cursorMarker);
 }
 
 void PathVisualizer::rebuildWaypoints(const Path& path)
 {
-    // Clear any previous waypoint or raw nodes (keep markers at indices 0-3)
-    while (children.size() > 4)
+    // Clear any previous waypoint or raw nodes (keep markers at indices 0-4)
+    while (children.size() > 5)
     {
         children.pop_back();
     }
@@ -164,7 +177,7 @@ void PathVisualizer::setRawSamples(const std::vector<RawPathSample>& rawSamples)
 void PathVisualizer::clearRawSamples()
 {
     // If raw samples node was added, rebuild waypoints will clean it up or remove it
-    if (children.size() > 5)
+    if (children.size() > 6)
     {
         children.pop_back();
     }
@@ -187,10 +200,29 @@ void PathVisualizer::setProgressPosition(const Vector3& pos)
     }
 }
 
+void PathVisualizer::setCursorPosition(const Vector3& pos, bool isPinching)
+{
+    if (m_cursorMarker)
+    {
+        m_cursorMarker->setAbsolutePosition(pos.x, 1.5f, pos.z);
+        float s = isPinching ? 3.0f : 2.0f;
+        m_cursorMarker->setScale(s, s, s);
+    }
+}
+
+void PathVisualizer::hideCursor()
+{
+    if (m_cursorMarker)
+    {
+        m_cursorMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
+    }
+}
+
 void PathVisualizer::hideMarkers()
 {
     if (m_targetMarker) m_targetMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
     if (m_progressMarker) m_progressMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
+    if (m_cursorMarker) m_cursorMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
 }
 
 void PathVisualizer::setEnabled(bool enabled)
