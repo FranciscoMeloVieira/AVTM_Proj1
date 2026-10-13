@@ -19,10 +19,16 @@ public:
     void update(float deltaTime) override;
     void stopCar();
 	void setPosition(Vector3 position);
+	void applyControlRequests(float inSteering, float inThrottle, float inBrake);
+	Vector3 getFacingDirection() const { return facingDirection; }
+	float getThrottleInput() const { return throttleInput; }
+	float getBrakeInput() const { return brakeInput; }
 
     float steering = 0;
     bool isAccelerating = false;
 	bool isDecelerating = false;
+	float throttleInput = 0.0f;
+	float brakeInput = 0.0f;
     EmptyNode* carNode = nullptr; // Node representing the car
     void OnCollision(const GameObject& other, const CollisionInfo& info) override;
 

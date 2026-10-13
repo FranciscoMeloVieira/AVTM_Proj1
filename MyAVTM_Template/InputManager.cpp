@@ -22,16 +22,35 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
         break;
 
     case 'w':
-        gameManager->car->isAccelerating = true;
+        if (gameManager->getControlMode() == ControlMode::WASD)
+            gameManager->car->isAccelerating = true;
         break;
     case 's':
-        gameManager->car->isDecelerating = true;
+        if (gameManager->getControlMode() == ControlMode::WASD)
+            gameManager->car->isDecelerating = true;
         break;
     case 'a':
-        gameManager->car->steering = 1.0f;
+        if (gameManager->getControlMode() == ControlMode::WASD)
+            gameManager->car->steering = 1.0f;
         break;
     case 'd':
-        gameManager->car->steering = -1.0f;
+        if (gameManager->getControlMode() == ControlMode::WASD)
+            gameManager->car->steering = -1.0f;
+        break;
+
+    case 'm':
+    case 'M':
+        gameManager->toggleControlMode();
+        break;
+
+    case 't':
+    case 'T':
+        gameManager->switchTestPath();
+        break;
+
+    case 'v':
+    case 'V':
+        gameManager->toggleDebugVisuals();
         break;
 
     case '1':
@@ -74,13 +93,16 @@ void InputManager::onKeyUp(unsigned char key, int xx, int yy) {
     switch (key) {
     case 'a':
     case 'd':
-        gameManager->car->steering = 0.0f;
+        if (gameManager->getControlMode() == ControlMode::WASD)
+            gameManager->car->steering = 0.0f;
         break;
     case 'w':
-        gameManager->car->isAccelerating = false;
+        if (gameManager->getControlMode() == ControlMode::WASD)
+            gameManager->car->isAccelerating = false;
         break;
     case 's':
-        gameManager->car->isDecelerating = false;
+        if (gameManager->getControlMode() == ControlMode::WASD)
+            gameManager->car->isDecelerating = false;
         break;
     }
 }

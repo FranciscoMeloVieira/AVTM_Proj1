@@ -121,7 +121,9 @@ void HUD::render(Renderer& renderer)
 	renderer.renderText(textCmd);
 
 	// 2. Render any custom constant lines
-	float nextY = constantPos[1] - 40.0f * constantSize;
+	float lineSpacing = 140.0f * constantSize;
+	float nextY = constantPos[1] + lineSpacing;
+
 	for (const auto& pair : customConstants) {
 		TextCommand customCmd;
 		customCmd.str = pair.second;
@@ -131,7 +133,8 @@ void HUD::render(Renderer& renderer)
 		for (int i = 0; i < 4; ++i) customCmd.color[i] = constantColor[i];
 		customCmd.pvm = pvm;
 		renderer.renderText(customCmd);
-		nextY -= 40.0f * constantSize;
+
+		nextY += lineSpacing;
 	}
 
 	// 3. Render Game Over message (centered)

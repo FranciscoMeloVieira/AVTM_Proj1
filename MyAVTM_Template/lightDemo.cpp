@@ -1,4 +1,4 @@
-﻿//
+//
 // AVT 2026: Texturing with Phong Shading and Text rendered with TrueType library
 // The text rendering was based on https://dev.to/shreyaspranav/how-to-render-truetype-fonts-in-opengl-using-stbtruetypeh-1p5k
 // You can also learn an alternative with FreeType text: https://learnopengl.com/In-Practice/Text-Rendering
@@ -52,6 +52,7 @@
 #include "InputManager.hpp"
 #include "MirrorRenderer.hpp"
 #include "ShadowSystem.hpp"
+#include "PathFollowerTests.h"
 
 using namespace std;
 
@@ -527,6 +528,14 @@ unsigned int loadCubemap(vector<std::string> faces)
 //
 
 int main(int argc, char **argv) {
+
+	bool testsPassed = RunPathFollowerTests();
+
+	for (int i = 1; i < argc; ++i) {
+		if (std::string(argv[i]) == "--test" || std::string(argv[i]) == "-t") {
+			std::quick_exit(testsPassed ? 0 : 1);
+		}
+	}
 
 //  GLUT initialization
 	glutInit(&argc, argv);

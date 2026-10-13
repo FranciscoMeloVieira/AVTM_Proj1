@@ -184,6 +184,10 @@
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="Vector3.h" />
+    <ClInclude Include="Path.h" />
+    <ClInclude Include="PathFollower.h" />
+    <ClInclude Include="PathVisualizer.h" />
+    <ClInclude Include="PathFollowerTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basic_geometry.cpp" />
@@ -211,8 +215,11 @@
     <ClCompile Include="ScenegraphNode.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="ShadowSystem.cpp" />
-    <ClCompile Include="ShadowSystem.hpp" />
     <ClCompile Include="texture.cpp" />
+    <ClCompile Include="Path.cpp" />
+    <ClCompile Include="PathFollower.cpp" />
+    <ClCompile Include="PathVisualizer.cpp" />
+    <ClCompile Include="PathFollowerTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\mesh.frag" />

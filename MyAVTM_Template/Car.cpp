@@ -60,22 +60,25 @@ void Car::update(float deltaTime)
 	carNode->setRotation(rotationDifference, 0.0f, 1.0f, 0.0f);
 
 	// 4. Compute Acceleration & Reversing Logic
-	if (isAccelerating)
+	float effectiveThrottle = isAccelerating ? (throttleInput > 0.0f ? throttleInput : 1.0f) : throttleInput;
+	float effectiveBrake = isDecelerating ? (brakeInput > 0.0f ? brakeInput : 1.0f) : brakeInput;
+
+	if (effectiveThrottle > 0.01f)
 	{
-		acceleration += facingDirection * accelerationForce;
+		acceleration += facingDirection * (accelerationForce * effectiveThrottle);
 	}
-	else if (isDecelerating)
+	else if (effectiveBrake > 0.01f)
 	{
 		// If moving forward, brake. If stopped or already moving backward, reverse.
 		if (forwardSpeed > 0.1f)
 		{
-			acceleration -= facingDirection * brakeForce;
+			acceleration -= facingDirection * (brakeForce * effectiveBrake);
 		}
 		else
 		{
 			// Reverse drive force
 			float reverseForce = accelerationForce * 0.5f; // Reverse is usually slower
-			acceleration -= facingDirection * reverseForce;
+			acceleration -= facingDirection * (reverseForce * effectiveBrake);
 		}
 	}
 
@@ -86,7 +89,7 @@ void Car::update(float deltaTime)
 	velocity += acceleration * deltaTime;
 
 	// Stop completely if minimal input and speed
-	if (!isAccelerating && !isDecelerating && Length(velocity) < 0.1f)
+	if (!isAccelerating && !isDecelerating && throttleInput <= 0.01f && brakeInput <= 0.01f && Length(velocity) < 0.1f)
 	{
 		velocity = { 0.0f, 0.0f, 0.0f };
 	}
@@ -112,6 +115,17 @@ void Car::stopCar()
 	isAccelerating = false;
 	isDecelerating = false;
 	steering = 0.0f;
+	throttleInput = 0.0f;
+	brakeInput = 0.0f;
+}
+
+void Car::applyControlRequests(float inSteering, float inThrottle, float inBrake)
+{
+	steering = std::clamp(inSteering, -1.0f, 1.0f);
+	throttleInput = std::clamp(inThrottle, 0.0f, 1.0f);
+	brakeInput = std::clamp(inBrake, 0.0f, 1.0f);
+	isAccelerating = (throttleInput > 0.1f);
+	isDecelerating = (brakeInput > 0.1f);
 }
 
 void Car::setPosition(Vector3 position)
@@ -147,7 +161,7 @@ void Car::reset(const Vector3& targetPosition, const Vector3& targetFacing)
 	position = targetPosition;
 	velocity = { 0.0f, 0.0f, 0.0f };
 	acceleration = { 0.0f, 0.0f, 0.0f };
-	steering = 0.0f;
+	stopCar();
 
 	// 2. Reset direction vectors
 	facingDirection = Normalize(targetFacing);

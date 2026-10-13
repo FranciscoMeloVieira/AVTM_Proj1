@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <CheriosManager.hpp>
 #include <OrangeManager.hpp>
 #include <CollisionSystem.h>
@@ -7,6 +7,15 @@
 #include <Butter.h>
 #include <Candles.hpp>
 #include <CheckpointManager.h>
+#include "Path.h"
+#include "PathFollower.h"
+#include "PathVisualizer.h"
+
+enum class ControlMode
+{
+	WASD,
+	PathFollowing
+};
 
 class GameManager
 {
@@ -55,6 +64,22 @@ public:
 	void resetGame();
 
 	CheckpointManager* checkpointManager = nullptr;
+
+	// Path Following AI (Stage 1)
+	ControlMode controlMode = ControlMode::WASD;
+	Path activePath;
+	PathFollower pathFollower;
+	PathVisualizer* pathVisualizer = nullptr;
+	int currentPathIndex = 0;
+	bool debugVisualsEnabled = true;
+
+	void toggleControlMode();
+	void setControlMode(ControlMode mode);
+	ControlMode getControlMode() const { return controlMode; }
+
+	void switchTestPath();
+	void loadTestPath(int index);
+	void toggleDebugVisuals();
 
 private:
 };
