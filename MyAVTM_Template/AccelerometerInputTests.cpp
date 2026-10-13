@@ -36,8 +36,6 @@ bool testCalibrationFilteringAndBounds()
 	config.filterAlpha = 1.0f;
 	config.sensitivity = 100.0f;
 	config.maximumSpeed = 50.0f;
-	config.invertX = false;
-	config.invertY = true;
 	AccelerometerMapper mapper(config);
 
 	mapper.beginCalibration();
@@ -53,17 +51,39 @@ bool testCalibrationFilteringAndBounds()
 	assert(near(mapper.getCursorPosition().x, 150.0f));
 	assert(near(mapper.getCursorPosition().z, 0.0f));
 
-	mapper.consumeSample({ 80, 0.3f, 0.3f, 0.95f });
+	mapper.consumeSample({ 80, 0.1f, 0.3f, 0.95f });
+	mapper.update(0.1f);
+	assert(mapper.getCursorPosition().x < 150.0f);
+	assert(near(mapper.getCursorPosition().z, 0.0f));
+
+	mapper.setCursorPosition(Vector3(150.0f, 0.0f, 0.0f));
+	mapper.consumeSample({ 100, 0.1f, 0.1f, 0.95f });
 	mapper.update(0.1f);
 	assert(mapper.getCursorPosition().x > 150.0f);
+	assert(near(mapper.getCursorPosition().z, 0.0f));
+
+	mapper.setCursorPosition(Vector3(150.0f, 0.0f, 0.0f));
+	mapper.consumeSample({ 120, 0.3f, 0.2f, 0.95f });
+	mapper.update(0.1f);
+	assert(near(mapper.getCursorPosition().x, 150.0f));
 	assert(mapper.getCursorPosition().z < 0.0f);
 
+	mapper.setCursorPosition(Vector3(150.0f, 0.0f, 0.0f));
+	mapper.consumeSample({ 140, -0.1f, 0.2f, 0.95f });
+	mapper.update(0.1f);
+	assert(near(mapper.getCursorPosition().x, 150.0f));
+	assert(mapper.getCursorPosition().z > 0.0f);
+
 	mapper.setBounds(149.0f, 151.0f, -1.0f, 1.0f);
-	mapper.consumeSample({ 100, 2.0f, 0.2f, 0.95f });
+	mapper.consumeSample({ 160, 2.0f, 0.2f, 0.95f });
 	mapper.update(0.1f);
 	mapper.update(0.1f);
 	assert(mapper.getCursorPosition().x <= 151.0f);
 	assert(mapper.getCursorPosition().z >= -1.0f);
+	mapper.setCursorPosition(Vector3(200.0f, 10.0f, 20.0f));
+	assert(near(mapper.getCursorPosition().x, 151.0f));
+	assert(near(mapper.getCursorPosition().y, 0.0f));
+	assert(near(mapper.getCursorPosition().z, 1.0f));
 	mapper.resetCursor();
 	assert(near(mapper.getCursorPosition().x, 150.0f));
 	assert(near(mapper.getCursorPosition().z, 0.0f));

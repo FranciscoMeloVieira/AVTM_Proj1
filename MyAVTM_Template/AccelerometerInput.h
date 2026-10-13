@@ -27,8 +27,8 @@ struct AccelerometerMapperConfig
 	float fullScaleTilt = 0.35f;
 	float sensitivity = 140.0f;
 	float maximumSpeed = 120.0f;
-	bool invertX = false;
-	bool invertY = true;
+	bool invertX = true;
+	bool invertY = false;
 };
 
 class AccelerometerMapper
@@ -40,6 +40,7 @@ public:
 	void consumeSample(const AccelerometerSample& sample);
 	void update(float deltaTimeSeconds);
 	void setBounds(float minX, float maxX, float minZ, float maxZ);
+	void setCursorPosition(const Vector3& position);
 	void resetCursor();
 
 	bool isCalibrated() const { return m_calibrated; }

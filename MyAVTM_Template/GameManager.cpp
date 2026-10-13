@@ -124,7 +124,7 @@ void GameManager::update(float deltaTime)
 					pathEditor.isSmoothingEnabled() ? "ON" : "OFF",
 					pathEditor.isTrackReferenceVisible() ? "TRACK" : "BLANK");
 				hud->setConstantValue("2_Progress", buf);
-				hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate | B: Start | N: Stop | O: Center | E: Exit");
+				hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate | B: Start | N: Stop | O: Car | E: Exit");
 			}
 			char sensorStatus[256];
 			std::snprintf(sensorStatus, sizeof(sensorStatus), "Arduino: %s | Errors: %zu",
@@ -456,7 +456,7 @@ void GameManager::toggleArduinoConnection()
 		return;
 	}
 	accelerometerMapper.beginCalibration();
-	accelerometerMapper.resetCursor();
+	accelerometerMapper.setCursorPosition(car->position);
 	arduinoStatusMessage = "Connected; hold still for calibration";
 }
 
@@ -487,6 +487,7 @@ void GameManager::startArduinoRecording()
 	if (pathEditor.getState() == EditorState::Recording)
 		return;
 
+	accelerometerMapper.setCursorPosition(car->position);
 	const Vector3& cursor = accelerometerMapper.getCursorPosition();
 	lastArduinoRecordTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 	lastArduinoRecordedPosition = cursor;
@@ -505,7 +506,7 @@ void GameManager::stopArduinoRecording()
 
 void GameManager::resetArduinoCursor()
 {
-	accelerometerMapper.resetCursor();
+	accelerometerMapper.setCursorPosition(car->position);
 	if (pathVisualizer && arduinoSerial.isConnected() && accelerometerMapper.isCalibrated())
 		pathVisualizer->setCursorPosition(accelerometerMapper.getCursorPosition());
 }
@@ -576,7 +577,7 @@ void GameManager::updateArduinoInput(float deltaTime)
 	}
 
 	if (accelerometerMapper.isCalibrated() && arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)) && !arduinoRecording)
-		arduinoStatusMessage = "Calibrated; B starts recording, O centers cursor";
+		arduinoStatusMessage = "Calibrated; B starts at car, O returns to car";
 	else if (!accelerometerMapper.isCalibrated())
 		arduinoStatusMessage = "Calibrating neutral " + std::to_string(accelerometerMapper.getCalibrationSamplesCollected()) + "/" +
 			std::to_string(accelerometerMapper.getCalibrationSamplesRequired());

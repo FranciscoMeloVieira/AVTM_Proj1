@@ -116,8 +116,8 @@ void AccelerometerMapper::update(float deltaTimeSeconds)
 		return;
 
 	const float dt = std::min(deltaTimeSeconds, 0.1f);
-	float velocityX = m_config.sensitivity * applyDeadZone(m_filtered.x - m_neutral.x);
-	float velocityZ = m_config.sensitivity * applyDeadZone(m_filtered.y - m_neutral.y);
+	float velocityX = m_config.sensitivity * applyDeadZone(m_filtered.y - m_neutral.y);
+	float velocityZ = -m_config.sensitivity * applyDeadZone(m_filtered.x - m_neutral.x);
 	if (m_config.invertX)
 		velocityX = -velocityX;
 	if (m_config.invertY)
@@ -140,6 +140,15 @@ void AccelerometerMapper::setBounds(float minX, float maxX, float minZ, float ma
 	m_maxZ = maxZ;
 	m_cursorPosition.x = std::clamp(m_cursorPosition.x, m_minX, m_maxX);
 	m_cursorPosition.z = std::clamp(m_cursorPosition.z, m_minZ, m_maxZ);
+}
+
+void AccelerometerMapper::setCursorPosition(const Vector3& position)
+{
+	if (!std::isfinite(position.x) || !std::isfinite(position.z))
+		return;
+	m_cursorPosition.x = std::clamp(position.x, m_minX, m_maxX);
+	m_cursorPosition.y = 0.0f;
+	m_cursorPosition.z = std::clamp(position.z, m_minZ, m_maxZ);
 }
 
 void AccelerometerMapper::resetCursor()

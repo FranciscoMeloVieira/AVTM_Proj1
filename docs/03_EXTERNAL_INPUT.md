@@ -385,12 +385,12 @@ board, and upload this sketch. The sketch emits one CSV record every 20 ms
 and sends no diagnostic text to the data stream.
 
 The protocol is `ACCEL,1,<millis>,<x>,<y>,<z>\n`. The acceleration values
-are the library's acceleration readings in g. X and Y are used as the
-cursor's horizontal and vertical tilt controls; Z is retained for
-diagnostics/calibration and is not integrated. The board's physical axis
-orientation and signs must be checked by tilting the actual kit. The game
+are the library's acceleration readings in g. For the current kit mounting,
+sensor Y drives horizontal cursor motion and sensor X drives vertical motion
+(with the required sign rotation); Z is retained for diagnostics/calibration
+and is not integrated. Verify the signs by tilting the actual kit. The game
 provides `invertX` and `invertY` in `AccelerometerMapperConfig` to correct
-direction without changing path code. This mapping estimates tilt-relative
+horizontal and vertical directions. This mapping estimates tilt-relative
 velocity; it does not integrate acceleration into position.
 
 ### Game connection and controls
@@ -406,12 +406,14 @@ can own the port. In the path editor:
 | `G` | Recalibrate neutral orientation (hold the board still) |
 | `B` | Start a new Arduino path stroke after calibration |
 | `N` | Stop recording and preview the stroke |
-| `O` | Return the virtual cursor to the editor center |
+| `O` | Return the virtual cursor to the car's current position |
 | `C` | Clear the path; mouse drawing remains available |
 | `Enter` / `Space` | Confirm a valid path and use the existing follower |
 | `E` | Exit the editor and close the serial port |
 
-Connection starts a 30-sample neutral calibration automatically. The mapper
+Connection starts a 30-sample neutral calibration automatically. Each Arduino
+recording starts at the car's current ground-plane position; `O` returns the
+cursor there. The mapper
 applies an exponential low-pass filter, a 0.04 g dead zone, a configurable
 tilt response/sensitivity and speed limit, delta-time motion, and bounds from
 the editor's orthographic view. Recording samples the cursor into the same
