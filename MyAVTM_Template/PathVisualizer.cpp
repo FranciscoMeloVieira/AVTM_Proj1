@@ -63,16 +63,29 @@ PathVisualizer::PathVisualizer()
     m_endMarker->setScale(2.2f, 2.2f, 2.2f);
     m_endMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
     addChild(m_endMarker);
+
+    Material cursorMaterial = {
+        { 0.1f, 1.0f, 1.0f, 1.0f },
+        { 0.0f, 0.3f, 0.3f, 1.0f },
+        { 0.6f, 1.0f, 1.0f, 1.0f },
+        { 0.1f, 0.8f, 0.8f, 1.0f },
+        25.0f
+    };
+    m_cursorMarker = new MeshNode(2, 0, cursorMaterial);
+    m_cursorMarker->setScale(2.5f, 2.5f, 2.5f);
+    hideCursor();
+    addChild(m_cursorMarker);
 }
 
 void PathVisualizer::rebuildWaypoints(const Path& path)
 {
-    // Clear any previous waypoint or raw nodes (keep markers at indices 0-3)
-    while (children.size() > 4)
+    // Clear any previous waypoint or raw nodes (keep markers at indices 0-4)
+    while (children.size() > 5)
     {
         children.pop_back();
     }
     m_waypointsNode = nullptr;
+    m_rawSamplesNode = nullptr;
 
     if (!path.valid || path.totalLength < 0.1f)
     {
@@ -134,9 +147,12 @@ void PathVisualizer::setPath(const Path& path)
 
 void PathVisualizer::setRawSamples(const std::vector<RawPathSample>& rawSamples)
 {
-    // Waypoints node may be at index 4, raw samples node can be added after
     if (rawSamples.empty())
+    {
+        clearRawSamples();
         return;
+    }
+    clearRawSamples();
 
     std::vector<Vector3> rawPositions;
     rawPositions.reserve(rawSamples.size());
@@ -161,10 +177,21 @@ void PathVisualizer::setRawSamples(const std::vector<RawPathSample>& rawSamples)
     addChild(m_rawSamplesNode);
 }
 
+void PathVisualizer::setCursorPosition(const Vector3& pos)
+{
+    if (m_cursorMarker)
+        m_cursorMarker->setAbsolutePosition(pos.x, 2.5f, pos.z);
+}
+
+void PathVisualizer::hideCursor()
+{
+    if (m_cursorMarker)
+        m_cursorMarker->setAbsolutePosition(0.0f, -100.0f, 0.0f);
+}
+
 void PathVisualizer::clearRawSamples()
 {
-    // If raw samples node was added, rebuild waypoints will clean it up or remove it
-    if (children.size() > 5)
+    if (m_rawSamplesNode && !children.empty() && children.back().get() == m_rawSamplesNode)
     {
         children.pop_back();
     }

@@ -66,6 +66,7 @@ public:
     const std::string& getLastErrorMessage() const { return m_lastErrorMessage; }
     const PathEditorStats& getStats() const { return m_stats; }
     PathProcessor& getProcessor() { return m_processor; }
+    void setInputMethod(const std::string& inputMethod) { m_stats.inputMethod = inputMethod; }
 
     // Screen-to-world mapping for overhead orthographic camera
     static Vector3 screenToWorldOrtho(

@@ -54,6 +54,7 @@
 #include "ShadowSystem.hpp"
 #include "PathFollowerTests.h"
 #include "PathProcessorTests.h"
+#include "AccelerometerInputTests.h"
 
 using namespace std;
 
@@ -533,7 +534,8 @@ int main(int argc, char **argv) {
 
 	bool tests1 = RunPathFollowerTests();
 	bool tests2 = RunPathProcessorTests();
-	bool testsPassed = tests1 && tests2;
+	bool tests3 = RunAccelerometerInputTests();
+	bool testsPassed = tests1 && tests2 && tests3;
 
 	for (int i = 1; i < argc; ++i) {
 		if (std::string(argv[i]) == "--test" || std::string(argv[i]) == "-t") {

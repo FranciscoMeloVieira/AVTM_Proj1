@@ -17,6 +17,26 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
 
     if (gameManager && gameManager->isEditingPath()) {
         switch (key) {
+        case 'i':
+        case 'I':
+            gameManager->toggleArduinoConnection();
+            return;
+        case 'g':
+        case 'G':
+            gameManager->calibrateArduinoInput();
+            return;
+        case 'b':
+        case 'B':
+            gameManager->startArduinoRecording();
+            return;
+        case 'n':
+        case 'N':
+            gameManager->stopArduinoRecording();
+            return;
+        case 'o':
+        case 'O':
+            gameManager->resetArduinoCursor();
+            return;
         case 13:   // Enter
         case ' ':  // Space
         case 'y':
@@ -148,6 +168,8 @@ void InputManager::onKeyUp(unsigned char key, int xx, int yy) {
 void InputManager::onMouseButton(int button, int state, int xx, int yy)
 {
     if (gameManager && gameManager->isEditingPath()) {
+        if (gameManager->isArduinoRecording())
+            return;
         int winW = glutGet(GLUT_WINDOW_WIDTH);
         int winH = glutGet(GLUT_WINDOW_HEIGHT);
         if (button == GLUT_LEFT_BUTTON) {
@@ -187,6 +209,8 @@ void InputManager::onMouseButton(int button, int state, int xx, int yy)
 void InputManager::onMouseMotion(int xx, int yy) 
 {
     if (gameManager && gameManager->isEditingPath()) {
+        if (gameManager->isArduinoRecording())
+            return;
         int winW = glutGet(GLUT_WINDOW_WIDTH);
         int winH = glutGet(GLUT_WINDOW_HEIGHT);
         gameManager->onEditorMouseDrag(xx, yy, winW, winH);

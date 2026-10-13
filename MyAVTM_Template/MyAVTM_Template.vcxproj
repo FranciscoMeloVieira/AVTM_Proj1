@@ -191,6 +191,9 @@
     <ClInclude Include="PathProcessor.h" />
     <ClInclude Include="PathEditor.h" />
     <ClInclude Include="PathProcessorTests.h" />
+    <ClInclude Include="AccelerometerInput.h" />
+    <ClInclude Include="AccelerometerInputTests.h" />
+    <ClInclude Include="SerialPort.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basic_geometry.cpp" />
@@ -226,12 +229,16 @@
     <ClCompile Include="PathProcessor.cpp" />
     <ClCompile Include="PathEditor.cpp" />
     <ClCompile Include="PathProcessorTests.cpp" />
+    <ClCompile Include="AccelerometerInput.cpp" />
+    <ClCompile Include="AccelerometerInputTests.cpp" />
+    <ClCompile Include="SerialPort.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\mesh.frag" />
     <None Include="shaders\mesh.vert" />
     <None Include="shaders\ttf.frag" />
     <None Include="shaders\ttf.vert" />
+    <None Include="arduino\AccelerometerPathInput\AccelerometerPathInput.ino" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

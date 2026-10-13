@@ -23,6 +23,8 @@ public:
 
     // Updates the current progress / closest point position
     void setProgressPosition(const Vector3& pos);
+    void setCursorPosition(const Vector3& pos);
+    void hideCursor();
 
     // Visibility toggles
     void setEnabled(bool enabled);
@@ -34,6 +36,7 @@ private:
     MeshNode* m_progressMarker = nullptr;
     MeshNode* m_startMarker = nullptr;
     MeshNode* m_endMarker = nullptr;
+    MeshNode* m_cursorMarker = nullptr;
 
     InstancedObjectNode* m_waypointsNode = nullptr;
     InstancedObjectNode* m_rawSamplesNode = nullptr;

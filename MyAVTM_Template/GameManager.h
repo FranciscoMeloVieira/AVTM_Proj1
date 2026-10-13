@@ -11,6 +11,9 @@
 #include "PathFollower.h"
 #include "PathVisualizer.h"
 #include "PathEditor.h"
+#include "AccelerometerInput.h"
+#include "SerialPort.h"
+#include <string>
 
 enum class ControlMode
 {
@@ -100,6 +103,19 @@ public:
 	void onEditorMouseDown(int x, int y, int winW, int winH);
 	void onEditorMouseDrag(int x, int y, int winW, int winH);
 	void onEditorMouseUp(int x, int y, int winW, int winH);
+	void toggleArduinoConnection();
+	void calibrateArduinoInput();
+	void startArduinoRecording();
+	void stopArduinoRecording();
+	void resetArduinoCursor();
+	bool isArduinoRecording() const { return arduinoRecording; }
 
 private:
+	SerialPort arduinoSerial;
+	AccelerometerMapper accelerometerMapper;
+	bool arduinoRecording = false;
+	std::string arduinoStatusMessage = "Arduino disconnected";
+	Vector3 lastArduinoRecordedPosition;
+	double lastArduinoRecordTime = 0.0;
+	void updateArduinoInput(float deltaTime);
 };

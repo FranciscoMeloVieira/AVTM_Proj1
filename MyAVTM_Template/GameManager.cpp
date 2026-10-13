@@ -1,6 +1,9 @@
 #include "GameManager.h"
 #include <iostream>
 #include <GL/freeglut.h>
+#include <cmath>
+#include <cstdlib>
+#include <vector>
 
 GameManager::GameManager(EmptyNode* sceneRoot)
 {
@@ -8,6 +11,8 @@ GameManager::GameManager(EmptyNode* sceneRoot)
 	hud = new HUD();
 	this->init();
 }
+
+GameManager::~GameManager() = default;
 
 void GameManager::init()
 {
@@ -43,9 +48,9 @@ void GameManager::init()
 	/*for (int i = 0; i < orangesManager->numOranges; i++) {
 		collisionSystem->AddGameObject(&orangesManager->oranges[i]);
 	}*/
-	for (int i = 0; i < cheeriosManager->cheerios.size(); i++) {
+	/*for (int i = 0; i < cheeriosManager->cheerios.size(); i++) {
 		collisionSystem->AddGameObject(&cheeriosManager->cheerios[i]);
-	}
+	}*/
 	collisionSystem->AddGameObject(butter);
 	for (int i = 0; i < checkpointManager->checkpoints.size(); i++) {
 		collisionSystem->AddGameObject(checkpointManager->checkpoints[i]);
@@ -69,15 +74,23 @@ void GameManager::update(float deltaTime)
 
 		if (isEditingPath())
 		{
+			updateArduinoInput(deltaTime);
+			if (!arduinoSerial.isConnected() && arduinoRecording)
+			{
+				std::string disconnectDiagnostic = arduinoSerial.getStatusMessage();
+				stopArduinoRecording();
+				if (!disconnectDiagnostic.empty() && arduinoStatusMessage != "Sensor data stale; recording stopped safely")
+					arduinoStatusMessage = disconnectDiagnostic;
+			}
 			EditorState est = pathEditor.getState();
 			if (est == EditorState::Recording)
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [RECORDING STROKE...]");
 				char buf[128];
-				std::snprintf(buf, sizeof(buf), "Recorded: %d samples  (Release mouse to finish)", static_cast<int>(pathEditor.getRawSamples().size()));
+				std::snprintf(buf, sizeof(buf), "Recorded: %d samples | N: Stop Arduino recording", static_cast<int>(pathEditor.getRawSamples().size()));
 				hud->setConstantValue("1_Path", buf);
-				hud->removeConstantValue("2_Progress");
-				hud->removeConstantValue("3_Speed");
+				hud->setConstantValue("2_Progress", "N: Stop | C: Clear | E: Exit Edit");
+				hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate");
 			}
 			else if (est == EditorState::Preview)
 			{
@@ -91,34 +104,37 @@ void GameManager::update(float deltaTime)
 						pathEditor.isClosedLoop() ? "ON" : "OFF",
 						pathEditor.isSmoothingEnabled() ? "ON" : "OFF");
 					hud->setConstantValue("1_Path", buf);
-					hud->setConstantValue("2_Progress", "ENTER/SPACE: Confirm & Drive | C: Clear | L: Loop | S: Smooth");
-					hud->setConstantValue("3_Speed", "K: Blank/Track View | E: Exit Edit");
+					hud->setConstantValue("2_Progress", "ENTER/SPACE: Confirm | C: Clear | L: Loop | S: Smooth");
+					hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate | B/N: Record/Stop | E: Exit");
 				}
 				else
 				{
 					hud->setConstantValue("1_Path", "ERROR: " + pathEditor.getLastErrorMessage());
-					hud->setConstantValue("2_Progress", "Drag mouse to redraw | C: Clear | E: Exit Edit");
+					hud->setConstantValue("2_Progress", "Drag mouse or B to record | C: Clear | E: Exit Edit");
 					hud->removeConstantValue("3_Speed");
 				}
 			}
 			else // Editing
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [READY TO DRAW]");
-				hud->setConstantValue("1_Path", "Drag LEFT MOUSE to draw custom path");
+				hud->setConstantValue("1_Path", "Drag mouse to draw | Arduino cursor: B starts, N stops");
 				char buf[128];
 				std::snprintf(buf, sizeof(buf), "Loop: %s | Smooth: %s | View: %s",
 					pathEditor.isClosedLoop() ? "CLOSED" : "OPEN",
 					pathEditor.isSmoothingEnabled() ? "ON" : "OFF",
 					pathEditor.isTrackReferenceVisible() ? "TRACK" : "BLANK");
 				hud->setConstantValue("2_Progress", buf);
-				hud->setConstantValue("3_Speed", "L: Toggle Loop | S: Toggle Smooth | K: Blank View | E: Exit Edit");
+				hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate | B: Start | N: Stop | O: Center | E: Exit");
 			}
-			hud->removeConstantValue("4_Steer");
+			char sensorStatus[256];
+			std::snprintf(sensorStatus, sizeof(sensorStatus), "Arduino: %s | Errors: %zu",
+				arduinoStatusMessage.c_str(), arduinoSerial.getErrorCount());
+			hud->setConstantValue("4_Steer", sensorStatus);
 
 			if (pathVisualizer)
 			{
-				pathVisualizer->setRawSamples(pathEditor.getRawSamples());
 				pathVisualizer->setPath(pathEditor.getProcessedPath());
+				pathVisualizer->setRawSamples(pathEditor.getRawSamples());
 				pathVisualizer->hideMarkers();
 			}
 
@@ -282,14 +298,19 @@ void GameManager::enterPathEditor()
 	pathEditor.enterEditMode();
 	if (pathVisualizer)
 	{
-		pathVisualizer->setRawSamples(pathEditor.getRawSamples());
 		pathVisualizer->setPath(pathEditor.getProcessedPath());
+		pathVisualizer->setRawSamples(pathEditor.getRawSamples());
 		pathVisualizer->hideMarkers();
 	}
 }
 
 void GameManager::exitPathEditor()
 {
+	stopArduinoRecording();
+	arduinoSerial.close();
+	if (pathVisualizer)
+		pathVisualizer->hideCursor();
+	arduinoStatusMessage = "Arduino disconnected";
 	pathEditor.exitEditMode();
 	applyTrackReferenceVisibility();
 	if (pathVisualizer)
@@ -317,6 +338,11 @@ void GameManager::confirmEditorPath()
 	if (pathEditor.confirmPath(confirmed))
 	{
 		activePath = confirmed;
+		arduinoRecording = false;
+		arduinoSerial.close();
+		if (pathVisualizer)
+			pathVisualizer->hideCursor();
+		arduinoStatusMessage = "Arduino disconnected";
 		setControlMode(ControlMode::PathFollowing);
 		pathFollower.setPath(activePath, true);
 
@@ -332,6 +358,7 @@ void GameManager::confirmEditorPath()
 
 void GameManager::clearEditorPath()
 {
+	stopArduinoRecording();
 	pathEditor.clear();
 	if (pathVisualizer)
 	{
@@ -397,4 +424,162 @@ void GameManager::onEditorMouseDrag(int x, int y, int winW, int winH)
 void GameManager::onEditorMouseUp(int x, int y, int winW, int winH)
 {
 	pathEditor.endStroke();
+}
+
+void GameManager::toggleArduinoConnection()
+{
+	if (arduinoSerial.isConnected())
+	{
+		stopArduinoRecording();
+		arduinoSerial.close();
+		arduinoStatusMessage = "Arduino disconnected";
+		if (pathVisualizer)
+			pathVisualizer->hideCursor();
+		return;
+	}
+
+	const char* configuredPort = std::getenv("AVTM_ACCEL_COM");
+	const std::string portName = configuredPort && *configuredPort ? configuredPort : "COM3";
+	unsigned int baudRate = 115200;
+	if (const char* configuredBaud = std::getenv("AVTM_ACCEL_BAUD"))
+	{
+		char* end = nullptr;
+		const unsigned long parsedBaud = std::strtoul(configuredBaud, &end, 10);
+		if (end != configuredBaud && *end == '\0' && parsedBaud >= 1200 && parsedBaud <= 2000000)
+			baudRate = static_cast<unsigned int>(parsedBaud);
+	}
+
+	std::string errorMessage;
+	if (!arduinoSerial.open(portName, baudRate, errorMessage))
+	{
+		arduinoStatusMessage = errorMessage;
+		return;
+	}
+	accelerometerMapper.beginCalibration();
+	accelerometerMapper.resetCursor();
+	arduinoStatusMessage = "Connected; hold still for calibration";
+}
+
+void GameManager::calibrateArduinoInput()
+{
+	if (!arduinoSerial.isConnected())
+	{
+		arduinoStatusMessage = "Connect Arduino first (I)";
+		return;
+	}
+	stopArduinoRecording();
+	accelerometerMapper.beginCalibration();
+	arduinoStatusMessage = "Hold still; calibrating neutral";
+}
+
+void GameManager::startArduinoRecording()
+{
+	if (!arduinoSerial.isConnected() || !arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)))
+	{
+		arduinoStatusMessage = "Connect Arduino and wait for valid samples";
+		return;
+	}
+	if (!accelerometerMapper.isCalibrated())
+	{
+		arduinoStatusMessage = "Calibration incomplete; hold still or press G";
+		return;
+	}
+	if (pathEditor.getState() == EditorState::Recording)
+		return;
+
+	const Vector3& cursor = accelerometerMapper.getCursorPosition();
+	lastArduinoRecordTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	lastArduinoRecordedPosition = cursor;
+	pathEditor.setInputMethod("arduino-tilt");
+	pathEditor.beginStroke(cursor, lastArduinoRecordTime);
+	arduinoRecording = pathEditor.getState() == EditorState::Recording;
+	arduinoStatusMessage = arduinoRecording ? "Recording tilt-controlled path" : "Editor cannot start recording now";
+}
+
+void GameManager::stopArduinoRecording()
+{
+	if (arduinoRecording)
+		pathEditor.endStroke();
+	arduinoRecording = false;
+}
+
+void GameManager::resetArduinoCursor()
+{
+	accelerometerMapper.resetCursor();
+	if (pathVisualizer && arduinoSerial.isConnected() && accelerometerMapper.isCalibrated())
+		pathVisualizer->setCursorPosition(accelerometerMapper.getCursorPosition());
+}
+
+void GameManager::updateArduinoInput(float deltaTime)
+{
+	if (!arduinoSerial.isConnected())
+	{
+		if (arduinoRecording)
+		{
+			stopArduinoRecording();
+			arduinoStatusMessage = "Serial disconnected; recording stopped safely";
+		}
+		return;
+	}
+
+	std::vector<AccelerometerSample> samples;
+	arduinoSerial.poll(samples);
+	for (const AccelerometerSample& sample : samples)
+		accelerometerMapper.consumeSample(sample);
+	if (!arduinoSerial.isConnected())
+	{
+		if (arduinoRecording)
+			stopArduinoRecording();
+		arduinoStatusMessage = arduinoSerial.getStatusMessage();
+		return;
+	}
+
+	const int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
+	const int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	if (windowHeight > 0)
+	{
+		const float halfWidth = 200.0f * static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
+		accelerometerMapper.setBounds(150.0f - halfWidth, 150.0f + halfWidth, -200.0f, 200.0f);
+	}
+	if (accelerometerMapper.isCalibrated())
+	{
+		accelerometerMapper.update(deltaTime);
+		if (pathVisualizer)
+			pathVisualizer->setCursorPosition(accelerometerMapper.getCursorPosition());
+	}
+
+	if (arduinoRecording)
+	{
+		if (!arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)))
+		{
+			stopArduinoRecording();
+			arduinoStatusMessage = "Sensor data stale; recording stopped safely";
+			return;
+		}
+		if (pathEditor.getState() == EditorState::Recording)
+		{
+			const double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+			const Vector3& cursor = accelerometerMapper.getCursorPosition();
+			const float moved = Distance(lastArduinoRecordedPosition, cursor);
+			if (moved >= 0.8f || (now - lastArduinoRecordTime >= 0.05 && moved > 0.05f))
+			{
+				pathEditor.addSample(cursor, now);
+				lastArduinoRecordedPosition = cursor;
+				lastArduinoRecordTime = now;
+			}
+			if (pathEditor.getRawSamples().size() >= 10000)
+			{
+				stopArduinoRecording();
+				arduinoStatusMessage = "Sample limit reached; recording stopped";
+			}
+		}
+	}
+
+	if (accelerometerMapper.isCalibrated() && arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)) && !arduinoRecording)
+		arduinoStatusMessage = "Calibrated; B starts recording, O centers cursor";
+	else if (!accelerometerMapper.isCalibrated())
+		arduinoStatusMessage = "Calibrating neutral " + std::to_string(accelerometerMapper.getCalibrationSamplesCollected()) + "/" +
+			std::to_string(accelerometerMapper.getCalibrationSamplesRequired());
+	else if (!arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)) && !arduinoRecording)
+		arduinoStatusMessage = "Connected; waiting for fresh accelerometer data";
 }

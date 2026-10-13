@@ -371,3 +371,80 @@ car physics.
 > parsing/mapping independently from hardware where possible. Document
 > protocol fields, sensor units/axes, calibration, changed files, build
 > steps, and known limitations.
+
+## Repository implementation notes
+
+### Sensor Kit firmware
+
+The sketch at `MyAVTM_Template/arduino/AccelerometerPathInput/AccelerometerPathInput.ino`
+targets the Grove LIS3DHTR 3-axis accelerometer included with the Seeed
+Studio Arduino Sensor Kit. It uses the LIS3DHTR I2C address `0x19`, selects
+the ±2 g range, and requests 50 Hz output. Install the Seeed Studio
+`LIS3DHTR` Arduino library, select the Sensor Kit's Arduino-compatible
+board, and upload this sketch. The sketch emits one CSV record every 20 ms
+and sends no diagnostic text to the data stream.
+
+The protocol is `ACCEL,1,<millis>,<x>,<y>,<z>\n`. The acceleration values
+are the library's acceleration readings in g. X and Y are used as the
+cursor's horizontal and vertical tilt controls; Z is retained for
+diagnostics/calibration and is not integrated. The board's physical axis
+orientation and signs must be checked by tilting the actual kit. The game
+provides `invertX` and `invertY` in `AccelerometerMapperConfig` to correct
+direction without changing path code. This mapping estimates tilt-relative
+velocity; it does not integrate acceleration into position.
+
+### Game connection and controls
+
+Set `AVTM_ACCEL_COM` to the Arduino's COM port and optionally
+`AVTM_ACCEL_BAUD` to the sketch baud rate (default `COM3` and `115200`).
+Close Arduino Serial Monitor before connecting because only one application
+can own the port. In the path editor:
+
+| Key | Action |
+| --- | --- |
+| `I` | Connect/disconnect the configured COM port |
+| `G` | Recalibrate neutral orientation (hold the board still) |
+| `B` | Start a new Arduino path stroke after calibration |
+| `N` | Stop recording and preview the stroke |
+| `O` | Return the virtual cursor to the editor center |
+| `C` | Clear the path; mouse drawing remains available |
+| `Enter` / `Space` | Confirm a valid path and use the existing follower |
+| `E` | Exit the editor and close the serial port |
+
+Connection starts a 30-sample neutral calibration automatically. The mapper
+applies an exponential low-pass filter, a 0.04 g dead zone, a configurable
+tilt response/sensitivity and speed limit, delta-time motion, and bounds from
+the editor's orthographic view. Recording samples the cursor into the same
+`PathEditor` raw samples and `PathProcessor` canonical `Path` used by the
+mouse editor. A malformed line increments the diagnostic error count; a
+disconnect or one second without a valid sample stops an active stroke.
+Path following and car physics do not consume sensor data.
+
+### Changed files and validation
+
+- `AccelerometerInput.h/.cpp`: protocol validation, calibration, filtering,
+  dead zone, cursor mapping, bounds, and axis inversion.
+- `SerialPort.h/.cpp`: non-blocking Windows COM reader and diagnostics.
+- `GameManager.*`, `InputManager.cpp`, `PathEditor.h`, and
+  `PathVisualizer.*`: editor controls, shared path recording, status, and
+  cursor marker.
+- `AccelerometerInputTests.*`: hardware-independent parser, mapper, and
+  shared-path tests; run them with the application's existing `--test`
+  option after building.
+- `arduino/AccelerometerPathInput/AccelerometerPathInput.ino`: kit sketch.
+
+Build the C++ application with the existing `MyAVTM_Template` Visual Studio
+project (Debug/x64 or Release/x64). Run the built executable with `--test`
+to execute the path follower, path processor/editor, and accelerometer input
+tests. In PowerShell, set `$env:AVTM_ACCEL_COM = "COM5"` (replace `COM5` with
+the port shown by Windows Device Manager); set `$env:AVTM_ACCEL_BAUD` to
+`115200` if using a non-default sketch baud rate, then start the app.
+
+The parser and mapper tests do not require the board. Hardware validation
+still needs to confirm the installed LIS3DHTR library version and I2C address,
+neutral jitter, physical X/Y signs, cursor comfort, and unplug/reconnect
+behavior on the actual kit. The sketch intentionally has no device-specific
+fallback if the accelerometer does not initialize; in that case the game
+will report that valid samples are not arriving. COM defaults may need
+adjustment per machine. Experiment CSV outcome logging described above is
+not part of this input-path implementation.
