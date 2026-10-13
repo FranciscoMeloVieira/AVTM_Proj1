@@ -188,6 +188,9 @@
     <ClInclude Include="PathFollower.h" />
     <ClInclude Include="PathVisualizer.h" />
     <ClInclude Include="PathFollowerTests.h" />
+    <ClInclude Include="PathProcessor.h" />
+    <ClInclude Include="PathEditor.h" />
+    <ClInclude Include="PathProcessorTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basic_geometry.cpp" />
@@ -220,6 +223,9 @@
     <ClCompile Include="PathFollower.cpp" />
     <ClCompile Include="PathVisualizer.cpp" />
     <ClCompile Include="PathFollowerTests.cpp" />
+    <ClCompile Include="PathProcessor.cpp" />
+    <ClCompile Include="PathEditor.cpp" />
+    <ClCompile Include="PathProcessorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\mesh.frag" />

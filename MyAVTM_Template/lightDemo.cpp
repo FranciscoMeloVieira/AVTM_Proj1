@@ -53,6 +53,7 @@
 #include "MirrorRenderer.hpp"
 #include "ShadowSystem.hpp"
 #include "PathFollowerTests.h"
+#include "PathProcessorTests.h"
 
 using namespace std;
 
@@ -289,6 +290,7 @@ void buildSceneGraph() {
 
 	EmptyNode* racetrack = new EmptyNode();
 	sceneRoot->addChild(racetrack);
+	gameManager->setRacetrackNode(racetrack);
 
 	MeshNode* trackSegment = new MeshNode(0, 4, asphaltMaterial); 
 	trackSegment->setTransform(
@@ -529,7 +531,9 @@ unsigned int loadCubemap(vector<std::string> faces)
 
 int main(int argc, char **argv) {
 
-	bool testsPassed = RunPathFollowerTests();
+	bool tests1 = RunPathFollowerTests();
+	bool tests2 = RunPathProcessorTests();
+	bool testsPassed = tests1 && tests2;
 
 	for (int i = 1; i < argc; ++i) {
 		if (std::string(argv[i]) == "--test" || std::string(argv[i]) == "-t") {

@@ -1,5 +1,6 @@
 #include "GameManager.h"
 #include <iostream>
+#include <GL/freeglut.h>
 
 GameManager::GameManager(EmptyNode* sceneRoot)
 {
@@ -66,9 +67,68 @@ void GameManager::update(float deltaTime)
 		hud->setPaused(paused);
 		hud->setGameOver(lives <= 0);
 
+		if (isEditingPath())
+		{
+			EditorState est = pathEditor.getState();
+			if (est == EditorState::Recording)
+			{
+				hud->setConstantValue("0_Mode", "PATH EDITOR: [RECORDING STROKE...]");
+				char buf[128];
+				std::snprintf(buf, sizeof(buf), "Recorded: %d samples  (Release mouse to finish)", static_cast<int>(pathEditor.getRawSamples().size()));
+				hud->setConstantValue("1_Path", buf);
+				hud->removeConstantValue("2_Progress");
+				hud->removeConstantValue("3_Speed");
+			}
+			else if (est == EditorState::Preview)
+			{
+				hud->setConstantValue("0_Mode", "PATH EDITOR: [PREVIEW]");
+				const Path& p = pathEditor.getProcessedPath();
+				if (p.valid)
+				{
+					char buf[160];
+					std::snprintf(buf, sizeof(buf), "Length: %.1fm | Points: %d (Raw: %d) | Loop: %s | Smooth: %s",
+						p.totalLength, static_cast<int>(p.points.size()), static_cast<int>(pathEditor.getRawSamples().size()),
+						pathEditor.isClosedLoop() ? "ON" : "OFF",
+						pathEditor.isSmoothingEnabled() ? "ON" : "OFF");
+					hud->setConstantValue("1_Path", buf);
+					hud->setConstantValue("2_Progress", "ENTER/SPACE: Confirm & Drive | C: Clear | L: Loop | S: Smooth");
+					hud->setConstantValue("3_Speed", "K: Blank/Track View | E: Exit Edit");
+				}
+				else
+				{
+					hud->setConstantValue("1_Path", "ERROR: " + pathEditor.getLastErrorMessage());
+					hud->setConstantValue("2_Progress", "Drag mouse to redraw | C: Clear | E: Exit Edit");
+					hud->removeConstantValue("3_Speed");
+				}
+			}
+			else // Editing
+			{
+				hud->setConstantValue("0_Mode", "PATH EDITOR: [READY TO DRAW]");
+				hud->setConstantValue("1_Path", "Drag LEFT MOUSE to draw custom path");
+				char buf[128];
+				std::snprintf(buf, sizeof(buf), "Loop: %s | Smooth: %s | View: %s",
+					pathEditor.isClosedLoop() ? "CLOSED" : "OPEN",
+					pathEditor.isSmoothingEnabled() ? "ON" : "OFF",
+					pathEditor.isTrackReferenceVisible() ? "TRACK" : "BLANK");
+				hud->setConstantValue("2_Progress", buf);
+				hud->setConstantValue("3_Speed", "L: Toggle Loop | S: Toggle Smooth | K: Blank View | E: Exit Edit");
+			}
+			hud->removeConstantValue("4_Steer");
+
+			if (pathVisualizer)
+			{
+				pathVisualizer->setRawSamples(pathEditor.getRawSamples());
+				pathVisualizer->setPath(pathEditor.getProcessedPath());
+				pathVisualizer->hideMarkers();
+			}
+
+			hud->update(deltaTime);
+			return; // While in editor mode, pause world updates
+		}
+
 		if (controlMode == ControlMode::WASD)
 		{
-			hud->setConstantValue("0_Mode", "MODE: WASD  [M: Engage AI | T: Cycle Path | V: Visuals]");
+			hud->setConstantValue("0_Mode", "MODE: WASD  [E: Edit Path | M: Engage AI | T: Path | V: Visuals]");
 			hud->removeConstantValue("1_Path");
 			hud->removeConstantValue("2_Progress");
 			hud->removeConstantValue("3_Speed");
@@ -76,7 +136,7 @@ void GameManager::update(float deltaTime)
 		}
 		else
 		{
-			hud->setConstantValue("0_Mode", "MODE: AI PATH FOLLOWER  [M: Switch to WASD]");
+			hud->setConstantValue("0_Mode", "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD]");
 			hud->setConstantValue("1_Path", "PATH: " + activePath.name + "  [T: Switch Path]");
 
 			char buf[128];
@@ -214,4 +274,127 @@ void GameManager::toggleDebugVisuals()
 void GameManager::toggleFog()
 {
 	fogActive = !fogActive;
+}
+
+void GameManager::enterPathEditor()
+{
+	car->stopCar();
+	pathEditor.enterEditMode();
+	if (pathVisualizer)
+	{
+		pathVisualizer->setRawSamples(pathEditor.getRawSamples());
+		pathVisualizer->setPath(pathEditor.getProcessedPath());
+		pathVisualizer->hideMarkers();
+	}
+}
+
+void GameManager::exitPathEditor()
+{
+	pathEditor.exitEditMode();
+	applyTrackReferenceVisibility();
+	if (pathVisualizer)
+	{
+		pathVisualizer->clearRawSamples();
+		pathVisualizer->setPath(activePath);
+	}
+}
+
+void GameManager::togglePathEditor()
+{
+	if (isEditingPath())
+	{
+		exitPathEditor();
+	}
+	else
+	{
+		enterPathEditor();
+	}
+}
+
+void GameManager::confirmEditorPath()
+{
+	Path confirmed;
+	if (pathEditor.confirmPath(confirmed))
+	{
+		activePath = confirmed;
+		setControlMode(ControlMode::PathFollowing);
+		pathFollower.setPath(activePath, true);
+
+		if (pathVisualizer)
+		{
+			pathVisualizer->clearRawSamples();
+			pathVisualizer->setPath(activePath);
+		}
+
+		std::cout << "[GameManager] Custom mouse path confirmed and handed to path follower!" << std::endl;
+	}
+}
+
+void GameManager::clearEditorPath()
+{
+	pathEditor.clear();
+	if (pathVisualizer)
+	{
+		pathVisualizer->clearRawSamples();
+		pathVisualizer->setPath(pathEditor.getProcessedPath());
+		pathVisualizer->hideMarkers();
+	}
+}
+
+void GameManager::toggleEditorClosedLoop()
+{
+	pathEditor.toggleClosedLoop();
+	if (pathVisualizer)
+	{
+		pathVisualizer->setPath(pathEditor.getProcessedPath());
+	}
+}
+
+void GameManager::toggleEditorSmoothing()
+{
+	pathEditor.toggleSmoothing();
+	if (pathVisualizer)
+	{
+		pathVisualizer->setPath(pathEditor.getProcessedPath());
+	}
+}
+
+void GameManager::toggleTrackReference()
+{
+	pathEditor.toggleTrackReference();
+	applyTrackReferenceVisibility();
+}
+
+void GameManager::applyTrackReferenceVisibility()
+{
+	bool visible = pathEditor.isTrackReferenceVisible();
+	if (cheeriosManager && cheeriosManager->cheeriosNode)
+		cheeriosManager->cheeriosNode->setVisibility(visible);
+	if (racetrackNode)
+		racetrackNode->setVisibility(visible);
+	if (candles && candles->candleNode)
+		candles->candleNode->setVisibility(visible);
+	if (butter && butter->butterNode)
+		butter->butterNode->setVisibility(visible);
+	if (orangesManager && orangesManager->orangesNode)
+		orangesManager->orangesNode->setVisibility(visible);
+}
+
+void GameManager::onEditorMouseDown(int x, int y, int winW, int winH)
+{
+	double timeSec = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	Vector3 worldPos = PathEditor::screenToWorldOrtho(x, y, winW, winH, 200.0f, 150.0f, 0.0f);
+	pathEditor.beginStroke(worldPos, timeSec);
+}
+
+void GameManager::onEditorMouseDrag(int x, int y, int winW, int winH)
+{
+	double timeSec = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	Vector3 worldPos = PathEditor::screenToWorldOrtho(x, y, winW, winH, 200.0f, 150.0f, 0.0f);
+	pathEditor.addSample(worldPos, timeSec);
+}
+
+void GameManager::onEditorMouseUp(int x, int y, int winW, int winH)
+{
+	pathEditor.endStroke();
 }

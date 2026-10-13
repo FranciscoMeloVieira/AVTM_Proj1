@@ -13,10 +13,11 @@ PathFollower::PathFollower(const PathFollowerConfig& config)
 {
 }
 
-void PathFollower::setPath(const Path& path)
+void PathFollower::setPath(const Path& path, bool seekToStart)
 {
     m_path = path;
     reset();
+    m_seekingStart = seekToStart && m_path.valid && m_path.points.size() >= 2;
 }
 
 void PathFollower::reset()
@@ -30,6 +31,7 @@ void PathFollower::reset()
     m_effectiveTargetSpeed = 0.0f;
     m_lastOutput = PathFollowOutput();
     m_finished = false;
+    m_seekingStart = false;
 }
 
 bool PathFollower::projectPointOnSegment(
@@ -164,7 +166,7 @@ PathFollowOutput PathFollower::update(const CarState& car, float deltaTime)
     {
         output.steering = 0.0f;
         output.throttle = 0.0f;
-        output.brake = 1.0f;
+        output.brake = 0.0f;
         output.finished = true;
         m_lastOutput = output;
         return output;
@@ -174,7 +176,20 @@ PathFollowOutput PathFollower::update(const CarState& car, float deltaTime)
     Vector3 closestPoint;
     float lateralDist = 0.0f;
 
-    if (m_currentProgress < 0.0f)
+    if (m_seekingStart)
+    {
+        closestPoint = m_path.points.front().position;
+        lateralDist = std::hypot(
+            car.position.x - closestPoint.x,
+            car.position.z - closestPoint.z);
+        m_currentProgress = 0.0f;
+
+        if (lateralDist <= m_config.stopDistance)
+        {
+            m_seekingStart = false;
+        }
+    }
+    else if (m_currentProgress < 0.0f)
     {
         // Initial anchor search across full path
         m_currentProgress = findClosestProgress(car.position, 0.0f, closestPoint, lateralDist);
@@ -208,7 +223,9 @@ PathFollowOutput PathFollower::update(const CarState& car, float deltaTime)
         sTarget = (std::min)(sTarget, m_path.totalLength);
     }
 
-    m_targetPosition = m_path.getPositionAtDistance(sTarget);
+    m_targetPosition = m_seekingStart
+        ? m_path.points.front().position
+        : m_path.getPositionAtDistance(sTarget);
 
     // 3. Calculate steering request
     Vector3 toTarget = Vector3(
@@ -245,7 +262,7 @@ PathFollowOutput PathFollower::update(const CarState& car, float deltaTime)
             m_finished = true;
             output.steering = 0.0f;
             output.throttle = 0.0f;
-            output.brake = 1.0f;
+            output.brake = 0.0f;
             output.finished = true;
             m_lastOutput = output;
             return output;
@@ -253,7 +270,8 @@ PathFollowOutput PathFollower::update(const CarState& car, float deltaTime)
 
         if (remainingDist < m_config.arrivalDistance)
         {
-            float arrivalRatio = std::clamp(remainingDist / m_config.arrivalDistance, 0.1f, 1.0f);
+            float arrivalRatio = std::clamp(
+                remainingDist / m_config.arrivalDistance, 0.0f, 1.0f);
             m_effectiveTargetSpeed = m_config.targetSpeed * arrivalRatio;
         }
         else
@@ -269,7 +287,12 @@ PathFollowOutput PathFollower::update(const CarState& car, float deltaTime)
     // Curvature slowdown
     float turnFactor = std::abs(output.steering);
     m_effectiveTargetSpeed *= (1.0f - m_config.turnSpeedReduction * turnFactor);
-    m_effectiveTargetSpeed = (std::max)(m_effectiveTargetSpeed, 4.0f);
+
+    // Keep a minimum speed only for closed loops. Open paths must be able to stop.
+    if (m_path.closedLoop)
+    {
+        m_effectiveTargetSpeed = (std::max)(m_effectiveTargetSpeed, 4.0f);
+    }
 
     // Speed error control
     float speedError = m_effectiveTargetSpeed - car.speed;

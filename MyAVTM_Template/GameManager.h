@@ -10,6 +10,7 @@
 #include "Path.h"
 #include "PathFollower.h"
 #include "PathVisualizer.h"
+#include "PathEditor.h"
 
 enum class ControlMode
 {
@@ -34,6 +35,8 @@ public:
 	Car* car;
 	Butter* butter;
 	Candles* candles;
+	EmptyNode* racetrackNode = nullptr;
+	void setRacetrackNode(EmptyNode* node) { racetrackNode = node; }
 
 	float* getCarMatrix() { return car->carNode->getLocalModelMatrix(); }
 	void toggleRearMirror() { rearMirrorRender = !rearMirrorRender; }
@@ -80,6 +83,23 @@ public:
 	void switchTestPath();
 	void loadTestPath(int index);
 	void toggleDebugVisuals();
+
+	// Path Editor (Stage 2)
+	PathEditor pathEditor;
+	bool isEditingPath() const { return pathEditor.getState() != EditorState::Idle; }
+	void enterPathEditor();
+	void exitPathEditor();
+	void togglePathEditor();
+	void confirmEditorPath();
+	void clearEditorPath();
+	void toggleEditorClosedLoop();
+	void toggleEditorSmoothing();
+	void toggleTrackReference();
+	void applyTrackReferenceVisibility();
+
+	void onEditorMouseDown(int x, int y, int winW, int winH);
+	void onEditorMouseDrag(int x, int y, int winW, int winH);
+	void onEditorMouseUp(int x, int y, int winW, int winH);
 
 private:
 };

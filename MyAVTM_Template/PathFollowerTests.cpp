@@ -136,7 +136,7 @@ bool testOpenPathEndpoint()
 
     PathFollowOutput out = follower.update(car, 0.016f);
     assert(out.finished == true);
-    assert(approxEqual(out.brake, 1.0f));
+    assert(approxEqual(out.brake, 0.0f));
     assert(approxEqual(out.throttle, 0.0f));
 
     return true;

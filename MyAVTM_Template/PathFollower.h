@@ -42,7 +42,7 @@ public:
     PathFollower();
     explicit PathFollower(const PathFollowerConfig& config);
 
-    void setPath(const Path& path);
+    void setPath(const Path& path, bool seekToStart = false);
     void reset();
 
     PathFollowOutput update(const CarState& car, float deltaTime);
@@ -86,6 +86,7 @@ private:
     float m_effectiveTargetSpeed = 0.0f;
     PathFollowOutput m_lastOutput;
     bool m_finished = false;
+    bool m_seekingStart = false;
 
     float findClosestProgress(const Vector3& pos, float searchWindow, Vector3& outClosestPoint, float& outDistance) const;
 };

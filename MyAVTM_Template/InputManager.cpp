@@ -6,6 +6,44 @@
 #include <cstdio>
 
 void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
+    if (key == 'e' || key == 'E') {
+        gameManager->togglePathEditor();
+        if (gameManager->isEditingPath()) {
+            activeCamera = camera1;
+            activeCameraChanged = true;
+        }
+        return;
+    }
+
+    if (gameManager && gameManager->isEditingPath()) {
+        switch (key) {
+        case 13:   // Enter
+        case ' ':  // Space
+        case 'y':
+        case 'Y':
+            gameManager->confirmEditorPath();
+            return;
+        case 'c':
+        case 'C':
+            gameManager->clearEditorPath();
+            return;
+        case 'l':
+        case 'L':
+            gameManager->toggleEditorClosedLoop();
+            return;
+        case 's':
+        case 'S':
+            gameManager->toggleEditorSmoothing();
+            return;
+        case 'k':
+        case 'K':
+            gameManager->toggleTrackReference();
+            return;
+        default:
+            break;
+        }
+    }
+
     switch (key) {
 
     case 27:
@@ -109,6 +147,18 @@ void InputManager::onKeyUp(unsigned char key, int xx, int yy) {
 
 void InputManager::onMouseButton(int button, int state, int xx, int yy)
 {
+    if (gameManager && gameManager->isEditingPath()) {
+        int winW = glutGet(GLUT_WINDOW_WIDTH);
+        int winH = glutGet(GLUT_WINDOW_HEIGHT);
+        if (button == GLUT_LEFT_BUTTON) {
+            if (state == GLUT_DOWN)
+                gameManager->onEditorMouseDown(xx, yy, winW, winH);
+            else if (state == GLUT_UP)
+                gameManager->onEditorMouseUp(xx, yy, winW, winH);
+        }
+        return;
+    }
+
     // start tracking the mouse
     if (state == GLUT_DOWN) {
         startX = xx;
@@ -136,6 +186,12 @@ void InputManager::onMouseButton(int button, int state, int xx, int yy)
 
 void InputManager::onMouseMotion(int xx, int yy) 
 {
+    if (gameManager && gameManager->isEditingPath()) {
+        int winW = glutGet(GLUT_WINDOW_WIDTH);
+        int winH = glutGet(GLUT_WINDOW_HEIGHT);
+        gameManager->onEditorMouseDrag(xx, yy, winW, winH);
+        return;
+    }
     int deltaX, deltaY;
     float alphaAux, betaAux;
     float rAux;
