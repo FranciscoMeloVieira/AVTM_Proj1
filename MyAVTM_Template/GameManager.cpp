@@ -71,17 +71,16 @@ void GameManager::update(float deltaTime)
 		hud->setPoints(points);
 		hud->setPaused(paused);
 		hud->setGameOver(lives <= 0);
+		updateArduinoInput(deltaTime);
+		while (pendingArduinoButtonPresses > 0)
+		{
+			--pendingArduinoButtonPresses;
+			if (arduinoSerial.isConnected())
+				handleArduinoButtonPress();
+		}
 
 		if (isEditingPath())
 		{
-			updateArduinoInput(deltaTime);
-			if (!arduinoSerial.isConnected() && arduinoRecording)
-			{
-				std::string disconnectDiagnostic = arduinoSerial.getStatusMessage();
-				stopArduinoRecording();
-				if (!disconnectDiagnostic.empty() && arduinoStatusMessage != "Sensor data stale; recording stopped safely")
-					arduinoStatusMessage = disconnectDiagnostic;
-			}
 			const bool arduinoEnabled = arduinoSerial.isConnected();
 			EditorState est = pathEditor.getState();
 			if (est == EditorState::Recording)
@@ -90,7 +89,9 @@ void GameManager::update(float deltaTime)
 				char buf[128];
 				std::snprintf(buf, sizeof(buf), "Samples: %d", static_cast<int>(pathEditor.getRawSamples().size()));
 				hud->setConstantValue("1_Path", buf);
-				hud->setConstantValue("2_Progress", "N: Finish & Follow | C: Clear | E: Exit");
+				hud->setConstantValue("2_Progress", arduinoEnabled
+					? "D4/N: Finish & Follow | C: Clear | E: Exit"
+					: "N: Finish & Follow | C: Clear | E: Exit");
 				if (!arduinoEnabled)
 					hud->setConstantValue("3_Speed", "I: Connect Arduino");
 				else if (showPathEditorHudDetails)
@@ -98,6 +99,7 @@ void GameManager::update(float deltaTime)
 				else
 					hud->removeConstantValue("3_Speed");
 			}
+
 			else if (est == EditorState::Preview)
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [PREVIEW]");
@@ -113,7 +115,9 @@ void GameManager::update(float deltaTime)
 						hud->setConstantValue("1_Path", buf);
 					else
 						hud->removeConstantValue("1_Path");
-					hud->setConstantValue("2_Progress", "Enter/Space/N: Confirm & Follow | C: Clear | L: Loop | S: Smooth | E: Exit");
+					hud->setConstantValue("2_Progress", arduinoEnabled
+						? "D4/Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit"
+						: "Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit");
 					hud->setConstantValue("3_Speed", arduinoEnabled
 						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor" : "B: Start | O: Reset cursor")
 						: "I: Connect Arduino");
@@ -121,7 +125,7 @@ void GameManager::update(float deltaTime)
 				else
 				{
 					hud->setConstantValue("1_Path", "ERROR: " + pathEditor.getLastErrorMessage());
-					hud->setConstantValue("2_Progress", arduinoEnabled ? "B: Start | C: Clear | E: Exit" : "Drag mouse to draw | C: Clear | E: Exit");
+					hud->setConstantValue("2_Progress", arduinoEnabled ? "D4/B: Start | C: Clear | E: Exit" : "Drag mouse to draw | C: Clear | E: Exit");
 					if (!arduinoEnabled)
 						hud->setConstantValue("3_Speed", "I: Connect Arduino");
 					else if (showPathEditorHudDetails)
@@ -149,7 +153,7 @@ void GameManager::update(float deltaTime)
 					hud->removeConstantValue("2_Progress");
 				}
 				hud->setConstantValue("3_Speed", arduinoEnabled
-					? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor | E: Exit" : "B: Start | O: Reset cursor | E: Exit")
+					? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor | D4: Start | E: Exit" : "B: Start | O: Reset cursor | D4: Start | E: Exit")
 					: "I: Connect Arduino | E: Exit");
 			}
 			if (showPathEditorHudDetails)
@@ -177,9 +181,12 @@ void GameManager::update(float deltaTime)
 
 		if (controlMode == ControlMode::WASD)
 		{
-			hud->setConstantValue("0_Mode", showPathEditorHudDetails
+			std::string modeText = showPathEditorHudDetails
 				? "MODE: WASD  [E: Edit Path | M: Engage AI | T: Path | V: Visuals]"
-				: "MODE: WASD  [E: Edit Path | M: Engage AI | V: Visuals]");
+				: "MODE: WASD  [E: Edit Path | M: Engage AI | V: Visuals]";
+			if (arduinoSerial.isConnected())
+				modeText += " | D4: Draw path";
+			hud->setConstantValue("0_Mode", modeText);
 			hud->removeConstantValue("1_Path");
 			hud->removeConstantValue("2_Progress");
 			hud->removeConstantValue("3_Speed");
@@ -187,7 +194,9 @@ void GameManager::update(float deltaTime)
 		}
 		else
 		{
-			hud->setConstantValue("0_Mode", "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD]");
+			hud->setConstantValue("0_Mode", arduinoSerial.isConnected()
+				? "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | D4: New path]"
+				: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD]");
 			hud->setConstantValue("1_Path", "PATH: " + activePath.name +
 				(showPathEditorHudDetails ? "  [T: Switch Path]" : ""));
 
@@ -238,6 +247,29 @@ void GameManager::update(float deltaTime)
 	butter->update(deltaTime);
 	checkpointManager->update(deltaTime);
 	collisionSystem->updateCollisions();
+}
+
+void GameManager::handleArduinoButtonPress()
+{
+	if (!isEditingPath())
+	{
+		enterPathEditor();
+		clearEditorPath();
+		startArduinoRecording();
+		return;
+	}
+
+	const EditorState state = pathEditor.getState();
+	if (state == EditorState::Recording ||
+		(state == EditorState::Preview && pathEditor.getProcessedPath().valid))
+	{
+		confirmEditorPath();
+		return;
+	}
+
+	if (state == EditorState::Preview)
+		clearEditorPath();
+	startArduinoRecording();
 }
 
 void GameManager::resetGame()
@@ -558,6 +590,7 @@ void GameManager::updateArduinoInput(float deltaTime)
 {
 	if (!arduinoSerial.isConnected())
 	{
+		arduinoButtonWasPressed = false;
 		if (arduinoRecording)
 		{
 			stopArduinoRecording();
@@ -569,7 +602,12 @@ void GameManager::updateArduinoInput(float deltaTime)
 	std::vector<AccelerometerSample> samples;
 	arduinoSerial.poll(samples);
 	for (const AccelerometerSample& sample : samples)
+	{
 		accelerometerMapper.consumeSample(sample);
+		if (sample.buttonPressed && !arduinoButtonWasPressed)
+			++pendingArduinoButtonPresses;
+		arduinoButtonWasPressed = sample.buttonPressed;
+	}
 	if (!arduinoSerial.isConnected())
 	{
 		if (arduinoRecording)
@@ -588,7 +626,7 @@ void GameManager::updateArduinoInput(float deltaTime)
 	if (accelerometerMapper.isCalibrated())
 	{
 		accelerometerMapper.update(deltaTime);
-		if (pathVisualizer)
+		if (pathVisualizer && isEditingPath())
 			pathVisualizer->setCursorPosition(accelerometerMapper.getCursorPosition());
 	}
 

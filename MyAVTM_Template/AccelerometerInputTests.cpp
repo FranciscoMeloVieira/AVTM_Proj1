@@ -20,10 +20,17 @@ bool testProtocolParsing()
 	assert(near(sample.x, 0.125f));
 	assert(near(sample.y, -0.25f));
 	assert(near(sample.z, 0.98f));
+	assert(!sample.buttonPressed);
+
+	assert(AccelerometerProtocol::parseLine("ACCEL,1,12345,0.125,-0.250,0.980,1", sample));
+	assert(sample.buttonPressed);
+	assert(AccelerometerProtocol::parseLine("ACCEL,1,12345,0.125,-0.250,0.980,0", sample));
+	assert(!sample.buttonPressed);
 
 	assert(!AccelerometerProtocol::parseLine("ACCEL,2,12345,0,0,1", sample));
 	assert(!AccelerometerProtocol::parseLine("ACCEL,1,12345,0,0", sample));
 	assert(!AccelerometerProtocol::parseLine("ACCEL,1,12345,0,0,1,extra", sample));
+	assert(!AccelerometerProtocol::parseLine("ACCEL,1,12345,0,0,1,2", sample));
 	assert(!AccelerometerProtocol::parseLine("ACCEL,1,12345,nan,0,1", sample));
 	assert(!AccelerometerProtocol::parseLine("ACCEL,1,12345,17,0,1", sample));
 	return true;

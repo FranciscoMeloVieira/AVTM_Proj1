@@ -115,8 +115,11 @@ private:
 	SerialPort arduinoSerial;
 	AccelerometerMapper accelerometerMapper;
 	bool arduinoRecording = false;
+	bool arduinoButtonWasPressed = false;
+	unsigned int pendingArduinoButtonPresses = 0;
 	std::string arduinoStatusMessage = "Arduino disconnected";
 	Vector3 lastArduinoRecordedPosition;
 	double lastArduinoRecordTime = 0.0;
 	void updateArduinoInput(float deltaTime);
+	void handleArduinoButtonPress();
 };

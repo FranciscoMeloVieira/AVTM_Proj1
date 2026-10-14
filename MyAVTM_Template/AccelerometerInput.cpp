@@ -12,25 +12,24 @@ bool AccelerometerProtocol::parseLine(std::string_view line, AccelerometerSample
 	if (line.size() > 128)
 		return false;
 
-	std::array<std::string_view, 6> fields;
+	std::array<std::string_view, 7> fields;
 	std::size_t fieldStart = 0;
-	for (std::size_t i = 0; i < fields.size(); ++i)
+	std::size_t fieldCount = 0;
+	while (fieldStart <= line.size())
 	{
+		if (fieldCount >= fields.size())
+			return false;
 		const std::size_t separator = line.find(',', fieldStart);
-		if (i < fields.size() - 1)
+		if (separator == std::string_view::npos)
 		{
-			if (separator == std::string_view::npos)
-				return false;
-			fields[i] = line.substr(fieldStart, separator - fieldStart);
-			fieldStart = separator + 1;
+			fields[fieldCount++] = line.substr(fieldStart);
+			break;
 		}
-		else
-		{
-			if (separator != std::string_view::npos)
-				return false;
-			fields[i] = line.substr(fieldStart);
-		}
+		fields[fieldCount++] = line.substr(fieldStart, separator - fieldStart);
+		fieldStart = separator + 1;
 	}
+	if (fieldCount != 6 && fieldCount != 7)
+		return false;
 
 	if (fields[0] != "ACCEL" || fields[1] != "1")
 		return false;
@@ -47,6 +46,12 @@ bool AccelerometerProtocol::parseLine(std::string_view line, AccelerometerSample
 		if (result.ec != std::errc() || result.ptr != fields[i + 3].data() + fields[i + 3].size() ||
 			!std::isfinite(*values[i]) || std::abs(*values[i]) > 16.0f)
 			return false;
+	}
+	if (fieldCount == 7)
+	{
+		if (fields[6] != "0" && fields[6] != "1")
+			return false;
+		sample.buttonPressed = fields[6] == "1";
 	}
 
 	outSample = sample;

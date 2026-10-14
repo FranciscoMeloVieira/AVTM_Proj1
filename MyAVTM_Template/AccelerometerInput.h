@@ -11,6 +11,7 @@ struct AccelerometerSample
 	float x = 0.0f;
 	float y = 0.0f;
 	float z = 0.0f;
+	bool buttonPressed = false;
 };
 
 class AccelerometerProtocol
