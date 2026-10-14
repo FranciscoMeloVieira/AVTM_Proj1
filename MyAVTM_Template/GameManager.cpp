@@ -347,10 +347,9 @@ void GameManager::enterPathEditor()
 void GameManager::exitPathEditor()
 {
 	stopArduinoRecording();
-	arduinoSerial.close();
 	if (pathVisualizer)
 		pathVisualizer->hideCursor();
-	arduinoStatusMessage = "Arduino disconnected";
+	arduinoStatusMessage = arduinoSerial.isConnected() ? "Connected; ready for next path" : "Arduino disconnected";
 	pathEditor.exitEditMode();
 	applyTrackReferenceVisibility();
 	if (pathVisualizer)
@@ -384,10 +383,9 @@ void GameManager::confirmEditorPath()
 	{
 		activePath = confirmed;
 		arduinoRecording = false;
-		arduinoSerial.close();
 		if (pathVisualizer)
 			pathVisualizer->hideCursor();
-		arduinoStatusMessage = "Arduino disconnected";
+		arduinoStatusMessage = arduinoSerial.isConnected() ? "Connected; ready for next path" : "Arduino disconnected";
 		setControlMode(ControlMode::PathFollowing);
 		pathFollower.setPath(activePath, true);
 
