@@ -89,7 +89,7 @@ private:
     PathProcessor m_processor;
     std::string m_lastErrorMessage;
 
-    bool m_closedLoop = true;              // Default to closed loop for racetrack
+    bool m_closedLoop = false;
     bool m_trackReferenceVisible = true;   // Track visible by default
     double m_strokeStartTime = 0.0;
     PathEditorStats m_stats;

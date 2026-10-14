@@ -78,6 +78,7 @@ public:
 	PathVisualizer* pathVisualizer = nullptr;
 	int currentPathIndex = 0;
 	bool debugVisualsEnabled = true;
+	bool showPathEditorHudDetails = false;
 
 	void toggleControlMode();
 	void setControlMode(ControlMode mode);

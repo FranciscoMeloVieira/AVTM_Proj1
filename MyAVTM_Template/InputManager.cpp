@@ -31,7 +31,7 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
             return;
         case 'n':
         case 'N':
-            gameManager->stopArduinoRecording();
+            gameManager->confirmEditorPath();
             return;
         case 'o':
         case 'O':

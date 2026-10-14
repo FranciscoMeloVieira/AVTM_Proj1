@@ -48,9 +48,9 @@ void GameManager::init()
 	/*for (int i = 0; i < orangesManager->numOranges; i++) {
 		collisionSystem->AddGameObject(&orangesManager->oranges[i]);
 	}*/
-	/*for (int i = 0; i < cheeriosManager->cheerios.size(); i++) {
+	for (int i = 0; i < cheeriosManager->cheerios.size(); i++) {
 		collisionSystem->AddGameObject(&cheeriosManager->cheerios[i]);
-	}*/
+	}
 	collisionSystem->AddGameObject(butter);
 	for (int i = 0; i < checkpointManager->checkpoints.size(); i++) {
 		collisionSystem->AddGameObject(checkpointManager->checkpoints[i]);
@@ -82,15 +82,21 @@ void GameManager::update(float deltaTime)
 				if (!disconnectDiagnostic.empty() && arduinoStatusMessage != "Sensor data stale; recording stopped safely")
 					arduinoStatusMessage = disconnectDiagnostic;
 			}
+			const bool arduinoEnabled = arduinoSerial.isConnected();
 			EditorState est = pathEditor.getState();
 			if (est == EditorState::Recording)
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [RECORDING STROKE...]");
 				char buf[128];
-				std::snprintf(buf, sizeof(buf), "Recorded: %d samples | N: Stop Arduino recording", static_cast<int>(pathEditor.getRawSamples().size()));
+				std::snprintf(buf, sizeof(buf), "Samples: %d", static_cast<int>(pathEditor.getRawSamples().size()));
 				hud->setConstantValue("1_Path", buf);
-				hud->setConstantValue("2_Progress", "N: Stop | C: Clear | E: Exit Edit");
-				hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate");
+				hud->setConstantValue("2_Progress", "N: Finish & Follow | C: Clear | E: Exit");
+				if (!arduinoEnabled)
+					hud->setConstantValue("3_Speed", "I: Connect Arduino");
+				else if (showPathEditorHudDetails)
+					hud->setConstantValue("3_Speed", "I: Disconnect | G: Calibrate");
+				else
+					hud->removeConstantValue("3_Speed");
 			}
 			else if (est == EditorState::Preview)
 			{
@@ -99,37 +105,64 @@ void GameManager::update(float deltaTime)
 				if (p.valid)
 				{
 					char buf[160];
-					std::snprintf(buf, sizeof(buf), "Length: %.1fm | Points: %d (Raw: %d) | Loop: %s | Smooth: %s",
+					std::snprintf(buf, sizeof(buf), "Len: %.1fm | Pts: %d (raw %d) | Loop: %s | Smooth: %s",
 						p.totalLength, static_cast<int>(p.points.size()), static_cast<int>(pathEditor.getRawSamples().size()),
 						pathEditor.isClosedLoop() ? "ON" : "OFF",
 						pathEditor.isSmoothingEnabled() ? "ON" : "OFF");
-					hud->setConstantValue("1_Path", buf);
-					hud->setConstantValue("2_Progress", "ENTER/SPACE: Confirm | C: Clear | L: Loop | S: Smooth");
-					hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate | B/N: Record/Stop | E: Exit");
+					if (showPathEditorHudDetails)
+						hud->setConstantValue("1_Path", buf);
+					else
+						hud->removeConstantValue("1_Path");
+					hud->setConstantValue("2_Progress", "Enter/Space/N: Confirm & Follow | C: Clear | L: Loop | S: Smooth | E: Exit");
+					hud->setConstantValue("3_Speed", arduinoEnabled
+						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor" : "B: Start | O: Reset cursor")
+						: "I: Connect Arduino");
 				}
 				else
 				{
 					hud->setConstantValue("1_Path", "ERROR: " + pathEditor.getLastErrorMessage());
-					hud->setConstantValue("2_Progress", "Drag mouse or B to record | C: Clear | E: Exit Edit");
-					hud->removeConstantValue("3_Speed");
+					hud->setConstantValue("2_Progress", arduinoEnabled ? "B: Start | C: Clear | E: Exit" : "Drag mouse to draw | C: Clear | E: Exit");
+					if (!arduinoEnabled)
+						hud->setConstantValue("3_Speed", "I: Connect Arduino");
+					else if (showPathEditorHudDetails)
+						hud->setConstantValue("3_Speed", "I: Disconnect | G: Calibrate");
+					else
+						hud->removeConstantValue("3_Speed");
 				}
 			}
 			else // Editing
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [READY TO DRAW]");
-				hud->setConstantValue("1_Path", "Drag mouse to draw | Arduino cursor: B starts, N stops");
-				char buf[128];
-				std::snprintf(buf, sizeof(buf), "Loop: %s | Smooth: %s | View: %s",
-					pathEditor.isClosedLoop() ? "CLOSED" : "OPEN",
-					pathEditor.isSmoothingEnabled() ? "ON" : "OFF",
-					pathEditor.isTrackReferenceVisible() ? "TRACK" : "BLANK");
-				hud->setConstantValue("2_Progress", buf);
-				hud->setConstantValue("3_Speed", "I: Connect | G: Calibrate | B: Start | N: Stop | O: Car | E: Exit");
+				if (showPathEditorHudDetails)
+				{
+					hud->setConstantValue("1_Path", arduinoEnabled ? "Input: Arduino tilt" : "Input: Mouse (drag to draw)");
+					char buf[128];
+					std::snprintf(buf, sizeof(buf), "Loop %s | Smooth %s | View %s",
+						pathEditor.isClosedLoop() ? "CLOSED" : "OPEN",
+						pathEditor.isSmoothingEnabled() ? "ON" : "OFF",
+						pathEditor.isTrackReferenceVisible() ? "TRACK" : "BLANK");
+					hud->setConstantValue("2_Progress", buf);
+				}
+				else
+				{
+					hud->removeConstantValue("1_Path");
+					hud->removeConstantValue("2_Progress");
+				}
+				hud->setConstantValue("3_Speed", arduinoEnabled
+					? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor | E: Exit" : "B: Start | O: Reset cursor | E: Exit")
+					: "I: Connect Arduino | E: Exit");
 			}
-			char sensorStatus[256];
-			std::snprintf(sensorStatus, sizeof(sensorStatus), "Arduino: %s | Errors: %zu",
-				arduinoStatusMessage.c_str(), arduinoSerial.getErrorCount());
-			hud->setConstantValue("4_Steer", sensorStatus);
+			if (showPathEditorHudDetails)
+			{
+				char sensorStatus[256];
+				std::snprintf(sensorStatus, sizeof(sensorStatus), "Arduino: %s | Errors: %zu",
+					arduinoStatusMessage.c_str(), arduinoSerial.getErrorCount());
+				hud->setConstantValue("4_Steer", sensorStatus);
+			}
+			else
+			{
+				hud->removeConstantValue("4_Steer");
+			}
 
 			if (pathVisualizer)
 			{
@@ -144,7 +177,9 @@ void GameManager::update(float deltaTime)
 
 		if (controlMode == ControlMode::WASD)
 		{
-			hud->setConstantValue("0_Mode", "MODE: WASD  [E: Edit Path | M: Engage AI | T: Path | V: Visuals]");
+			hud->setConstantValue("0_Mode", showPathEditorHudDetails
+				? "MODE: WASD  [E: Edit Path | M: Engage AI | T: Path | V: Visuals]"
+				: "MODE: WASD  [E: Edit Path | M: Engage AI | V: Visuals]");
 			hud->removeConstantValue("1_Path");
 			hud->removeConstantValue("2_Progress");
 			hud->removeConstantValue("3_Speed");
@@ -153,9 +188,10 @@ void GameManager::update(float deltaTime)
 		else
 		{
 			hud->setConstantValue("0_Mode", "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD]");
-			hud->setConstantValue("1_Path", "PATH: " + activePath.name + "  [T: Switch Path]");
+			hud->setConstantValue("1_Path", "PATH: " + activePath.name +
+				(showPathEditorHudDetails ? "  [T: Switch Path]" : ""));
 
-			char buf[128];
+			/*char buf[128];
 			std::snprintf(buf, sizeof(buf), "PROGRESS: %.1f / %.1f m", pathFollower.getCurrentProgress(), activePath.totalLength);
 			hud->setConstantValue("2_Progress", buf);
 
@@ -164,8 +200,12 @@ void GameManager::update(float deltaTime)
 			hud->setConstantValue("3_Speed", buf);
 
 			std::snprintf(buf, sizeof(buf), "STEER: %.2f  | LAT DEV: %.2f m", pathFollower.getLastOutput().steering, pathFollower.getLateralDeviation());
-			hud->setConstantValue("4_Steer", buf);
+			hud->setConstantValue("4_Steer", buf);*/
 		}
+
+		hud->removeConstantValue("2_Progress");
+		hud->removeConstantValue("3_Speed");
+		hud->removeConstantValue("4_Steer");
 
 		hud->update(deltaTime);
 	}
@@ -334,6 +374,11 @@ void GameManager::togglePathEditor()
 
 void GameManager::confirmEditorPath()
 {
+	if (arduinoRecording)
+		stopArduinoRecording();
+	else if (pathEditor.getState() == EditorState::Recording)
+		pathEditor.endStroke();
+
 	Path confirmed;
 	if (pathEditor.confirmPath(confirmed))
 	{
@@ -352,7 +397,7 @@ void GameManager::confirmEditorPath()
 			pathVisualizer->setPath(activePath);
 		}
 
-		std::cout << "[GameManager] Custom mouse path confirmed and handed to path follower!" << std::endl;
+		std::cout << "[GameManager] Custom path confirmed and handed to path follower!" << std::endl;
 	}
 }
 
