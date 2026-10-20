@@ -17,17 +17,25 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
 
     if (gameManager && gameManager->isEditingPath()) {
         switch (key) {
+        case '\t':
+        case 'u':
+        case 'U':
+            gameManager->cyclePathInputMode();
+            return;
         case 'i':
         case 'I':
-            gameManager->toggleArduinoConnection();
+            gameManager->toggleActiveInputConnection();
             return;
         case 'g':
         case 'G':
-            gameManager->calibrateArduinoInput();
+            gameManager->calibrateActiveInput();
             return;
         case 'b':
         case 'B':
-            gameManager->startArduinoRecording();
+            if (gameManager->isActiveInputRecording())
+                gameManager->stopActiveInputRecording();
+            else
+                gameManager->startActiveInputRecording();
             return;
         case 'n':
         case 'N':
@@ -35,7 +43,7 @@ void InputManager::onKeyDown(unsigned char key, int xx, int yy) {
             return;
         case 'o':
         case 'O':
-            gameManager->resetArduinoCursor();
+            gameManager->resetActiveInputCursor();
             return;
         case 13:   // Enter
         case ' ':  // Space
@@ -168,7 +176,7 @@ void InputManager::onKeyUp(unsigned char key, int xx, int yy) {
 void InputManager::onMouseButton(int button, int state, int xx, int yy)
 {
     if (gameManager && gameManager->isEditingPath()) {
-        if (gameManager->isArduinoRecording())
+        if (gameManager->isActiveInputRecording() && gameManager->getPathInputMode() != PathInputMode::Mouse)
             return;
         int winW = glutGet(GLUT_WINDOW_WIDTH);
         int winH = glutGet(GLUT_WINDOW_HEIGHT);
@@ -209,7 +217,7 @@ void InputManager::onMouseButton(int button, int state, int xx, int yy)
 void InputManager::onMouseMotion(int xx, int yy) 
 {
     if (gameManager && gameManager->isEditingPath()) {
-        if (gameManager->isArduinoRecording())
+        if (gameManager->isActiveInputRecording() && gameManager->getPathInputMode() != PathInputMode::Mouse)
             return;
         int winW = glutGet(GLUT_WINDOW_WIDTH);
         int winH = glutGet(GLUT_WINDOW_HEIGHT);

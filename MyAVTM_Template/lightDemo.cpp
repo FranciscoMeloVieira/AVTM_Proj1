@@ -55,6 +55,7 @@
 #include "PathFollowerTests.h"
 #include "PathProcessorTests.h"
 #include "AccelerometerInputTests.h"
+#include "PS4ControllerInputTests.h"
 
 using namespace std;
 
@@ -535,13 +536,78 @@ int main(int argc, char **argv) {
 	bool tests1 = RunPathFollowerTests();
 	bool tests2 = RunPathProcessorTests();
 	bool tests3 = RunAccelerometerInputTests();
-	bool testsPassed = tests1 && tests2 && tests3;
+	bool tests4 = RunPS4ControllerInputTests();
+	bool testsPassed = tests1 && tests2 && tests3 && tests4;
 
 	for (int i = 1; i < argc; ++i) {
 		if (std::string(argv[i]) == "--test" || std::string(argv[i]) == "-t") {
 			std::quick_exit(testsPassed ? 0 : 1);
 		}
 	}
+
+	PathInputMode startupInputMode = PathInputMode::Mouse;
+	bool startupInputModeExplicitlySet = false;
+
+	for (int i = 1; i < argc; ++i) {
+		std::string arg = argv[i];
+		if (arg == "--input" || arg == "-i") {
+			if (i + 1 < argc) {
+				std::string val = argv[++i];
+				for (char& c : val) c = static_cast<char>(std::tolower(c));
+				if (val == "arduino" || val == "tilt") {
+					startupInputMode = PathInputMode::Arduino;
+					startupInputModeExplicitlySet = true;
+				} else if (val == "ps4" || val == "ps4gyro" || val == "gyro" || val == "dualshock") {
+					startupInputMode = PathInputMode::PS4Gyro;
+					startupInputModeExplicitlySet = true;
+				} else if (val == "mouse") {
+					startupInputMode = PathInputMode::Mouse;
+					startupInputModeExplicitlySet = true;
+				}
+			}
+		} else if (arg.rfind("--input=", 0) == 0) {
+			std::string val = arg.substr(8);
+			for (char& c : val) c = static_cast<char>(std::tolower(c));
+			if (val == "arduino" || val == "tilt") {
+				startupInputMode = PathInputMode::Arduino;
+				startupInputModeExplicitlySet = true;
+			} else if (val == "ps4" || val == "ps4gyro" || val == "gyro" || val == "dualshock") {
+				startupInputMode = PathInputMode::PS4Gyro;
+				startupInputModeExplicitlySet = true;
+			} else if (val == "mouse") {
+				startupInputMode = PathInputMode::Mouse;
+				startupInputModeExplicitlySet = true;
+			}
+		}
+	}
+
+	if (!startupInputModeExplicitlySet) {
+		if (const char* envMode = std::getenv("AVTM_INPUT_MODE")) {
+			std::string val = envMode;
+			for (char& c : val) c = static_cast<char>(std::tolower(c));
+			if (val == "arduino" || val == "tilt") {
+				startupInputMode = PathInputMode::Arduino;
+				startupInputModeExplicitlySet = true;
+			} else if (val == "ps4" || val == "ps4gyro" || val == "gyro" || val == "dualshock") {
+				startupInputMode = PathInputMode::PS4Gyro;
+				startupInputModeExplicitlySet = true;
+			}
+		}
+	}
+
+	const char* startupModeName = "Mouse (drag to draw)";
+	if (startupInputMode == PathInputMode::Arduino)
+		startupModeName = "Arduino Accelerometer (tilt control)";
+	else if (startupInputMode == PathInputMode::PS4Gyro)
+		startupModeName = "PS4 DualShock 4 Gyro (motion control)";
+
+	std::cout << "\n========================================================" << std::endl;
+	std::cout << " AVTM Stage 3: Autonomous Vehicle Path Navigation Demo" << std::endl;
+	std::cout << " Input Options: [1] Mouse  [2] Arduino  [3] PS4 Gyro" << std::endl;
+	std::cout << " Active Path Input: " << startupModeName << std::endl;
+	std::cout << " Switch mode at startup: --input [mouse|arduino|ps4]" << std::endl;
+	std::cout << " Switch mode at runtime: Press Tab or U in Path Editor (E)" << std::endl;
+	std::cout << "========================================================\n" << std::endl;
 
 //  GLUT initialization
 	glutInit(&argc, argv);
@@ -600,6 +666,9 @@ int main(int argc, char **argv) {
 	ilInit();
 
 	buildScene();
+	if (gameManager) {
+		gameManager->setPathInputMode(startupInputMode);
+	}
 
 	vector<std::string> skyboxFaces = {
 	"assets/skybox/right.jpg",

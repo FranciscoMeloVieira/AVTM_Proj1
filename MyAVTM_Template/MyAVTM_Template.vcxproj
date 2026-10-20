@@ -194,6 +194,14 @@
     <ClInclude Include="AccelerometerInput.h" />
     <ClInclude Include="AccelerometerInputTests.h" />
     <ClInclude Include="SerialPort.h" />
+    <ClInclude Include="IPathInputController.h" />
+    <ClInclude Include="MouseInputController.h" />
+    <ClInclude Include="ArduinoInputController.h" />
+    <ClInclude Include="PS4Parser.h" />
+    <ClInclude Include="PS4Controller.h" />
+    <ClInclude Include="PS4GyroMapper.h" />
+    <ClInclude Include="PS4GyroInputController.h" />
+    <ClInclude Include="PS4ControllerInputTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basic_geometry.cpp" />
@@ -232,6 +240,13 @@
     <ClCompile Include="AccelerometerInput.cpp" />
     <ClCompile Include="AccelerometerInputTests.cpp" />
     <ClCompile Include="SerialPort.cpp" />
+    <ClCompile Include="MouseInputController.cpp" />
+    <ClCompile Include="ArduinoInputController.cpp" />
+    <ClCompile Include="PS4Parser.cpp" />
+    <ClCompile Include="PS4Controller.cpp" />
+    <ClCompile Include="PS4GyroMapper.cpp" />
+    <ClCompile Include="PS4GyroInputController.cpp" />
+    <ClCompile Include="PS4ControllerInputTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\mesh.frag" />

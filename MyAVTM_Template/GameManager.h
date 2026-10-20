@@ -11,9 +11,13 @@
 #include "PathFollower.h"
 #include "PathVisualizer.h"
 #include "PathEditor.h"
-#include "AccelerometerInput.h"
-#include "SerialPort.h"
+#include "IPathInputController.h"
+#include "MouseInputController.h"
+#include "ArduinoInputController.h"
+#include "PS4GyroInputController.h"
+#include <memory>
 #include <string>
+#include <vector>
 
 enum class ControlMode
 {
@@ -88,7 +92,7 @@ public:
 	void loadTestPath(int index);
 	void toggleDebugVisuals();
 
-	// Path Editor (Stage 2)
+	// Path Editor (Stage 2 & Stage 3)
 	PathEditor pathEditor;
 	bool isEditingPath() const { return pathEditor.getState() != EditorState::Idle; }
 	void enterPathEditor();
@@ -101,25 +105,40 @@ public:
 	void toggleTrackReference();
 	void applyTrackReferenceVisibility();
 
+	// Mouse event forwarding
 	void onEditorMouseDown(int x, int y, int winW, int winH);
 	void onEditorMouseDrag(int x, int y, int winW, int winH);
 	void onEditorMouseUp(int x, int y, int winW, int winH);
+
+	// Unified Input Controller Management (Stage 3)
+	void setPathInputMode(PathInputMode mode);
+	PathInputMode getPathInputMode() const { return m_activeInputMode; }
+	void cyclePathInputMode();
+	IPathInputController* getActiveInputController();
+	const IPathInputController* getActiveInputController() const;
+
+	void toggleActiveInputConnection();
+	void calibrateActiveInput();
+	void startActiveInputRecording();
+	void stopActiveInputRecording();
+	void resetActiveInputCursor();
+	bool isActiveInputRecording() const;
+
+	// Backward-compatible delegates for existing Arduino calls
 	void toggleArduinoConnection();
 	void calibrateArduinoInput();
 	void startArduinoRecording();
 	void stopArduinoRecording();
 	void resetArduinoCursor();
-	bool isArduinoRecording() const { return arduinoRecording; }
+	bool isArduinoRecording() const;
+
+	// Access to specific controllers for tests / configuration
+	ArduinoInputController* getArduinoController();
+	PS4GyroInputController* getPS4Controller();
 
 private:
-	SerialPort arduinoSerial;
-	AccelerometerMapper accelerometerMapper;
-	bool arduinoRecording = false;
-	bool arduinoButtonWasPressed = false;
-	unsigned int pendingArduinoButtonPresses = 0;
-	std::string arduinoStatusMessage = "Arduino disconnected";
-	Vector3 lastArduinoRecordedPosition;
-	double lastArduinoRecordTime = 0.0;
-	void updateArduinoInput(float deltaTime);
-	void handleArduinoButtonPress();
+	std::vector<std::unique_ptr<IPathInputController>> m_inputControllers;
+	PathInputMode m_activeInputMode = PathInputMode::Mouse;
+
+	void initInputControllers();
 };

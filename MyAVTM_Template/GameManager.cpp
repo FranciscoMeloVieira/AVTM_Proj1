@@ -14,6 +14,27 @@ GameManager::GameManager(EmptyNode* sceneRoot)
 
 GameManager::~GameManager() = default;
 
+void GameManager::initInputControllers()
+{
+	m_inputControllers.clear();
+	m_inputControllers.push_back(std::make_unique<MouseInputController>());
+	m_inputControllers.push_back(std::make_unique<ArduinoInputController>());
+	m_inputControllers.push_back(std::make_unique<PS4GyroInputController>());
+
+	m_activeInputMode = PathInputMode::Mouse;
+	if (const char* envMode = std::getenv("AVTM_INPUT_MODE"))
+	{
+		std::string modeStr = envMode;
+		for (char& c : modeStr) c = static_cast<char>(std::tolower(c));
+		if (modeStr == "arduino" || modeStr == "tilt")
+			m_activeInputMode = PathInputMode::Arduino;
+		else if (modeStr == "ps4" || modeStr == "ps4gyro" || modeStr == "gyro" || modeStr == "dualshock")
+			m_activeInputMode = PathInputMode::PS4Gyro;
+		else if (modeStr == "mouse")
+			m_activeInputMode = PathInputMode::Mouse;
+	}
+}
+
 void GameManager::init()
 {
 	collisionSystem = new CollisionSystem();
@@ -62,6 +83,8 @@ void GameManager::init()
 	pathVisualizer = new PathVisualizer();
 	sceneRoot->addChild(pathVisualizer);
 	loadTestPath(0);
+
+	initInputControllers();
 }
 
 void GameManager::update(float deltaTime)
@@ -71,35 +94,70 @@ void GameManager::update(float deltaTime)
 		hud->setPoints(points);
 		hud->setPaused(paused);
 		hud->setGameOver(lives <= 0);
-		updateArduinoInput(deltaTime);
-		while (pendingArduinoButtonPresses > 0)
+
+		const int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
+		const int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+		if (windowHeight > 0)
 		{
-			--pendingArduinoButtonPresses;
-			if (arduinoSerial.isConnected())
-				handleArduinoButtonPress();
+			const float halfWidth = 200.0f * static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
+			getActiveInputController()->setBounds(150.0f - halfWidth, 150.0f + halfWidth, -200.0f, 200.0f);
 		}
+
+		const double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+		IPathInputController* activeCtrl = getActiveInputController();
+		activeCtrl->update(deltaTime, now, pathEditor);
+
+		if (activeCtrl->consumeConfirmRequested())
+			confirmEditorPath();
+		if (activeCtrl->consumeClearRequested())
+			clearEditorPath();
+		if (activeCtrl->consumeRecalibrateRequested())
+			activeCtrl->beginCalibration();
+		if (activeCtrl->consumeResetCursorRequested())
+			resetActiveInputCursor();
 
 		if (isEditingPath())
 		{
-			const bool arduinoEnabled = arduinoSerial.isConnected();
-			EditorState est = pathEditor.getState();
+			const std::string modeName = activeCtrl->getModeName();
+			const bool isConn = activeCtrl->isConnected();
+			const EditorState est = pathEditor.getState();
+
+			if (activeCtrl->hasCursor() && activeCtrl->isCalibrated() && pathVisualizer)
+			{
+				pathVisualizer->setCursorPosition(activeCtrl->getCursorPosition());
+			}
+			else if (pathVisualizer && !activeCtrl->hasCursor())
+			{
+				pathVisualizer->hideCursor();
+			}
+
 			if (est == EditorState::Recording)
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [RECORDING STROKE...]");
 				char buf[128];
-				std::snprintf(buf, sizeof(buf), "Samples: %d", static_cast<int>(pathEditor.getRawSamples().size()));
+				std::snprintf(buf, sizeof(buf), "Samples: %d | Input: %s", static_cast<int>(pathEditor.getRawSamples().size()), modeName.c_str());
 				hud->setConstantValue("1_Path", buf);
-				hud->setConstantValue("2_Progress", arduinoEnabled
-					? "D4/N: Finish & Follow | C: Clear | E: Exit"
-					: "N: Finish & Follow | C: Clear | E: Exit");
-				if (!arduinoEnabled)
-					hud->setConstantValue("3_Speed", "I: Connect Arduino");
-				else if (showPathEditorHudDetails)
-					hud->setConstantValue("3_Speed", "I: Disconnect | G: Calibrate");
-				else
-					hud->removeConstantValue("3_Speed");
-			}
 
+				if (m_activeInputMode == PathInputMode::PS4Gyro)
+				{
+					hud->setConstantValue("2_Progress", "PS4 X: Stop | Circle/N: Follow | Square/C: Clear | E: Exit");
+					hud->setConstantValue("3_Speed", "Options: Calibrate | Tab/U: Switch Input");
+				}
+				else if (m_activeInputMode == PathInputMode::Arduino)
+				{
+					hud->setConstantValue("2_Progress", isConn
+						? "D4/N: Finish & Follow | C: Clear | E: Exit"
+						: "N: Finish & Follow | C: Clear | E: Exit");
+					hud->setConstantValue("3_Speed", isConn
+						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | Tab/U: Switch" : "G: Calibrate | Tab/U: Switch")
+						: "I: Connect Arduino | Tab/U: Switch Input");
+				}
+				else // Mouse
+				{
+					hud->setConstantValue("2_Progress", "Drag mouse | N: Finish & Follow | C: Clear | E: Exit");
+					hud->setConstantValue("3_Speed", "Tab/U: Switch Input");
+				}
+			}
 			else if (est == EditorState::Preview)
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [PREVIEW]");
@@ -115,31 +173,45 @@ void GameManager::update(float deltaTime)
 						hud->setConstantValue("1_Path", buf);
 					else
 						hud->removeConstantValue("1_Path");
-					hud->setConstantValue("2_Progress", arduinoEnabled
-						? "D4/Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit"
-						: "Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit");
-					hud->setConstantValue("3_Speed", arduinoEnabled
-						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor" : "B: Start | O: Reset cursor")
-						: "I: Connect Arduino");
+
+					if (m_activeInputMode == PathInputMode::PS4Gyro)
+					{
+						hud->setConstantValue("2_Progress", "Circle/Enter/Space: Follow | Square/C: Clear | L: Loop | S: Smooth | E: Exit");
+						hud->setConstantValue("3_Speed", isConn ? "PS4 X/B: Start | Triangle/O: Reset cursor | Options/G: Calibrate | Tab/U: Switch"
+																: "I: Connect PS4 Controller | Tab/U: Switch Input");
+					}
+					else if (m_activeInputMode == PathInputMode::Arduino)
+					{
+						hud->setConstantValue("2_Progress", isConn
+							? "D4/Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit"
+							: "Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit");
+						hud->setConstantValue("3_Speed", isConn
+							? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor" : "B: Start | O: Reset cursor | Tab/U: Switch")
+							: "I: Connect Arduino | Tab/U: Switch Input");
+					}
+					else // Mouse
+					{
+						hud->setConstantValue("2_Progress", "Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit");
+						hud->setConstantValue("3_Speed", "Drag mouse to redraw | Tab/U: Switch Input");
+					}
 				}
 				else
 				{
 					hud->setConstantValue("1_Path", "ERROR: " + pathEditor.getLastErrorMessage());
-					hud->setConstantValue("2_Progress", arduinoEnabled ? "D4/B: Start | C: Clear | E: Exit" : "Drag mouse to draw | C: Clear | E: Exit");
-					if (!arduinoEnabled)
-						hud->setConstantValue("3_Speed", "I: Connect Arduino");
-					else if (showPathEditorHudDetails)
-						hud->setConstantValue("3_Speed", "I: Disconnect | G: Calibrate");
-					else
-						hud->removeConstantValue("3_Speed");
+					hud->setConstantValue("2_Progress", (m_activeInputMode == PathInputMode::PS4Gyro)
+						? "PS4 X/B: Start | Square/C: Clear | E: Exit"
+						: ((m_activeInputMode == PathInputMode::Arduino) ? (isConn ? "D4/B: Start | C: Clear | E: Exit" : "C: Clear | E: Exit")
+						: "Drag mouse to draw | C: Clear | E: Exit"));
+					hud->setConstantValue("3_Speed", "Tab/U: Switch Input");
 				}
 			}
-			else // Editing
+			else // Editing (Ready to Draw)
 			{
 				hud->setConstantValue("0_Mode", "PATH EDITOR: [READY TO DRAW]");
+				std::string inputModeStr = "Input: " + modeName + " (Tab/U: Switch)";
 				if (showPathEditorHudDetails)
 				{
-					hud->setConstantValue("1_Path", arduinoEnabled ? "Input: Arduino tilt" : "Input: Mouse (drag to draw)");
+					hud->setConstantValue("1_Path", inputModeStr);
 					char buf[128];
 					std::snprintf(buf, sizeof(buf), "Loop %s | Smooth %s | View %s",
 						pathEditor.isClosedLoop() ? "CLOSED" : "OPEN",
@@ -149,18 +221,32 @@ void GameManager::update(float deltaTime)
 				}
 				else
 				{
-					hud->removeConstantValue("1_Path");
+					hud->setConstantValue("1_Path", inputModeStr);
 					hud->removeConstantValue("2_Progress");
 				}
-				hud->setConstantValue("3_Speed", arduinoEnabled
-					? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor | D4: Start | E: Exit" : "B: Start | O: Reset cursor | D4: Start | E: Exit")
-					: "I: Connect Arduino | E: Exit");
+
+				if (m_activeInputMode == PathInputMode::PS4Gyro)
+				{
+					hud->setConstantValue("3_Speed", isConn ? "PS4 X/B: Start | Triangle/O: Reset cursor | Options/G: Calibrate | I: Disconnect"
+															: "I: Connect PS4 Controller | E: Exit | Tab/U: Switch");
+				}
+				else if (m_activeInputMode == PathInputMode::Arduino)
+				{
+					hud->setConstantValue("3_Speed", isConn
+						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor | D4: Start | E: Exit" : "B: Start | O: Reset cursor | D4: Start | E: Exit")
+						: "I: Connect Arduino | Tab/U: Switch Input | E: Exit");
+				}
+				else // Mouse
+				{
+					hud->setConstantValue("3_Speed", "Drag mouse to draw | E: Exit | Tab/U: Switch Input");
+				}
 			}
+
 			if (showPathEditorHudDetails)
 			{
 				char sensorStatus[256];
-				std::snprintf(sensorStatus, sizeof(sensorStatus), "Arduino: %s | Errors: %zu",
-					arduinoStatusMessage.c_str(), arduinoSerial.getErrorCount());
+				std::snprintf(sensorStatus, sizeof(sensorStatus), "%s: %s",
+					modeName.c_str(), activeCtrl->getStatusMessage().c_str());
 				hud->setConstantValue("4_Steer", sensorStatus);
 			}
 			else
@@ -184,8 +270,8 @@ void GameManager::update(float deltaTime)
 			std::string modeText = showPathEditorHudDetails
 				? "MODE: WASD  [E: Edit Path | M: Engage AI | T: Path | V: Visuals]"
 				: "MODE: WASD  [E: Edit Path | M: Engage AI | V: Visuals]";
-			if (arduinoSerial.isConnected())
-				modeText += " | D4: Draw path";
+			if (activeCtrl->isConnected() && m_activeInputMode != PathInputMode::Mouse)
+				modeText += (m_activeInputMode == PathInputMode::PS4Gyro) ? " | PS4 X: Draw path" : " | D4: Draw path";
 			hud->setConstantValue("0_Mode", modeText);
 			hud->removeConstantValue("1_Path");
 			hud->removeConstantValue("2_Progress");
@@ -194,22 +280,13 @@ void GameManager::update(float deltaTime)
 		}
 		else
 		{
-			hud->setConstantValue("0_Mode", arduinoSerial.isConnected()
-				? "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | D4: New path]"
+			hud->setConstantValue("0_Mode", (activeCtrl->isConnected() && m_activeInputMode != PathInputMode::Mouse)
+				? ((m_activeInputMode == PathInputMode::PS4Gyro)
+					? "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | PS4 X: New path]"
+					: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | D4: New path]")
 				: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD]");
 			hud->setConstantValue("1_Path", "PATH: " + activePath.name +
 				(showPathEditorHudDetails ? "  [T: Switch Path]" : ""));
-
-			/*char buf[128];
-			std::snprintf(buf, sizeof(buf), "PROGRESS: %.1f / %.1f m", pathFollower.getCurrentProgress(), activePath.totalLength);
-			hud->setConstantValue("2_Progress", buf);
-
-			float curSpeed = Dot(car->velocity, car->getFacingDirection());
-			std::snprintf(buf, sizeof(buf), "SPEED: %.1f m/s  (Target: %.1f)", curSpeed, pathFollower.getEffectiveTargetSpeed());
-			hud->setConstantValue("3_Speed", buf);
-
-			std::snprintf(buf, sizeof(buf), "STEER: %.2f  | LAT DEV: %.2f m", pathFollower.getLastOutput().steering, pathFollower.getLateralDeviation());
-			hud->setConstantValue("4_Steer", buf);*/
 		}
 
 		hud->removeConstantValue("2_Progress");
@@ -247,29 +324,6 @@ void GameManager::update(float deltaTime)
 	butter->update(deltaTime);
 	checkpointManager->update(deltaTime);
 	collisionSystem->updateCollisions();
-}
-
-void GameManager::handleArduinoButtonPress()
-{
-	if (!isEditingPath())
-	{
-		enterPathEditor();
-		clearEditorPath();
-		startArduinoRecording();
-		return;
-	}
-
-	const EditorState state = pathEditor.getState();
-	if (state == EditorState::Recording ||
-		(state == EditorState::Preview && pathEditor.getProcessedPath().valid))
-	{
-		confirmEditorPath();
-		return;
-	}
-
-	if (state == EditorState::Preview)
-		clearEditorPath();
-	startArduinoRecording();
 }
 
 void GameManager::resetGame()
@@ -368,20 +422,26 @@ void GameManager::enterPathEditor()
 {
 	car->stopCar();
 	pathEditor.enterEditMode();
+	IPathInputController* ctrl = getActiveInputController();
+	if (ctrl->hasCursor() && car)
+	{
+		ctrl->resetCursor(car->position);
+	}
 	if (pathVisualizer)
 	{
 		pathVisualizer->setPath(pathEditor.getProcessedPath());
 		pathVisualizer->setRawSamples(pathEditor.getRawSamples());
 		pathVisualizer->hideMarkers();
 	}
+	std::cout << "[PathEditor] Active Input: " << ctrl->getModeName() << std::endl;
+	std::cout << "[PathEditor] (Press Tab or U to switch input mode: Mouse / Arduino / PS4 Gyro)" << std::endl;
 }
 
 void GameManager::exitPathEditor()
 {
-	stopArduinoRecording();
+	stopActiveInputRecording();
 	if (pathVisualizer)
 		pathVisualizer->hideCursor();
-	arduinoStatusMessage = arduinoSerial.isConnected() ? "Connected; ready for next path" : "Arduino disconnected";
 	pathEditor.exitEditMode();
 	applyTrackReferenceVisibility();
 	if (pathVisualizer)
@@ -405,19 +465,14 @@ void GameManager::togglePathEditor()
 
 void GameManager::confirmEditorPath()
 {
-	if (arduinoRecording)
-		stopArduinoRecording();
-	else if (pathEditor.getState() == EditorState::Recording)
-		pathEditor.endStroke();
+	stopActiveInputRecording();
 
 	Path confirmed;
 	if (pathEditor.confirmPath(confirmed))
 	{
 		activePath = confirmed;
-		arduinoRecording = false;
 		if (pathVisualizer)
 			pathVisualizer->hideCursor();
-		arduinoStatusMessage = arduinoSerial.isConnected() ? "Connected; ready for next path" : "Arduino disconnected";
 		setControlMode(ControlMode::PathFollowing);
 		pathFollower.setPath(activePath, true);
 
@@ -433,7 +488,7 @@ void GameManager::confirmEditorPath()
 
 void GameManager::clearEditorPath()
 {
-	stopArduinoRecording();
+	stopActiveInputRecording();
 	pathEditor.clear();
 	if (pathVisualizer)
 	{
@@ -484,184 +539,173 @@ void GameManager::applyTrackReferenceVisibility()
 
 void GameManager::onEditorMouseDown(int x, int y, int winW, int winH)
 {
-	double timeSec = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-	Vector3 worldPos = PathEditor::screenToWorldOrtho(x, y, winW, winH, 200.0f, 150.0f, 0.0f);
-	pathEditor.beginStroke(worldPos, timeSec);
+	const double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	getActiveInputController()->onMouseDown(x, y, winW, winH, now, pathEditor);
 }
 
 void GameManager::onEditorMouseDrag(int x, int y, int winW, int winH)
 {
-	double timeSec = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-	Vector3 worldPos = PathEditor::screenToWorldOrtho(x, y, winW, winH, 200.0f, 150.0f, 0.0f);
-	pathEditor.addSample(worldPos, timeSec);
+	const double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	getActiveInputController()->onMouseDrag(x, y, winW, winH, now, pathEditor);
 }
 
 void GameManager::onEditorMouseUp(int x, int y, int winW, int winH)
 {
-	pathEditor.endStroke();
+	const double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	getActiveInputController()->onMouseUp(x, y, winW, winH, now, pathEditor);
+}
+
+void GameManager::setPathInputMode(PathInputMode mode)
+{
+	if (m_activeInputMode == mode)
+		return;
+
+	IPathInputController* oldCtrl = getActiveInputController();
+	if (oldCtrl->isRecording())
+		oldCtrl->stopRecording(pathEditor);
+
+	m_activeInputMode = mode;
+	IPathInputController* newCtrl = getActiveInputController();
+	if (newCtrl->hasCursor() && car)
+	{
+		newCtrl->resetCursor(car->position);
+	}
+	if (pathVisualizer)
+	{
+		if (newCtrl->hasCursor() && newCtrl->isCalibrated() && isEditingPath())
+			pathVisualizer->setCursorPosition(newCtrl->getCursorPosition());
+		else
+			pathVisualizer->hideCursor();
+	}
+
+	std::cout << "[PathEditor] Input mode switched to: " << newCtrl->getModeName() << std::endl;
+}
+
+void GameManager::cyclePathInputMode()
+{
+	switch (m_activeInputMode)
+	{
+	case PathInputMode::Mouse:
+		setPathInputMode(PathInputMode::Arduino);
+		break;
+	case PathInputMode::Arduino:
+		setPathInputMode(PathInputMode::PS4Gyro);
+		break;
+	case PathInputMode::PS4Gyro:
+	default:
+		setPathInputMode(PathInputMode::Mouse);
+		break;
+	}
+}
+
+IPathInputController* GameManager::getActiveInputController()
+{
+	for (auto& ctrl : m_inputControllers)
+	{
+		if (ctrl->getMode() == m_activeInputMode)
+			return ctrl.get();
+	}
+	if (!m_inputControllers.empty())
+		return m_inputControllers[0].get();
+	return nullptr;
+}
+
+const IPathInputController* GameManager::getActiveInputController() const
+{
+	for (const auto& ctrl : m_inputControllers)
+	{
+		if (ctrl->getMode() == m_activeInputMode)
+			return ctrl.get();
+	}
+	if (!m_inputControllers.empty())
+		return m_inputControllers[0].get();
+	return nullptr;
+}
+
+void GameManager::toggleActiveInputConnection()
+{
+	getActiveInputController()->toggleConnection();
+}
+
+void GameManager::calibrateActiveInput()
+{
+	getActiveInputController()->beginCalibration();
+}
+
+void GameManager::startActiveInputRecording()
+{
+	const double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	getActiveInputController()->startRecording(pathEditor, now);
+}
+
+void GameManager::stopActiveInputRecording()
+{
+	getActiveInputController()->stopRecording(pathEditor);
+}
+
+void GameManager::resetActiveInputCursor()
+{
+	getActiveInputController()->resetCursor(car ? car->position : Vector3(150.0f, 0.0f, 0.0f));
+}
+
+bool GameManager::isActiveInputRecording() const
+{
+	return getActiveInputController()->isRecording();
 }
 
 void GameManager::toggleArduinoConnection()
 {
-	if (arduinoSerial.isConnected())
-	{
-		stopArduinoRecording();
-		arduinoSerial.close();
-		arduinoStatusMessage = "Arduino disconnected";
-		if (pathVisualizer)
-			pathVisualizer->hideCursor();
-		return;
-	}
-
-	const char* configuredPort = std::getenv("AVTM_ACCEL_COM");
-	const std::string portName = configuredPort && *configuredPort ? configuredPort : "COM3";
-	unsigned int baudRate = 115200;
-	if (const char* configuredBaud = std::getenv("AVTM_ACCEL_BAUD"))
-	{
-		char* end = nullptr;
-		const unsigned long parsedBaud = std::strtoul(configuredBaud, &end, 10);
-		if (end != configuredBaud && *end == '\0' && parsedBaud >= 1200 && parsedBaud <= 2000000)
-			baudRate = static_cast<unsigned int>(parsedBaud);
-	}
-
-	std::string errorMessage;
-	if (!arduinoSerial.open(portName, baudRate, errorMessage))
-	{
-		arduinoStatusMessage = errorMessage;
-		return;
-	}
-	accelerometerMapper.beginCalibration();
-	accelerometerMapper.setCursorPosition(car->position);
-	arduinoStatusMessage = "Connected; hold still for calibration";
+	if (ArduinoInputController* ac = getArduinoController())
+		ac->toggleConnection();
 }
 
 void GameManager::calibrateArduinoInput()
 {
-	if (!arduinoSerial.isConnected())
-	{
-		arduinoStatusMessage = "Connect Arduino first (I)";
-		return;
-	}
-	stopArduinoRecording();
-	accelerometerMapper.beginCalibration();
-	arduinoStatusMessage = "Hold still; calibrating neutral";
+	if (ArduinoInputController* ac = getArduinoController())
+		ac->beginCalibration();
 }
 
 void GameManager::startArduinoRecording()
 {
-	if (!arduinoSerial.isConnected() || !arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)))
-	{
-		arduinoStatusMessage = "Connect Arduino and wait for valid samples";
-		return;
-	}
-	if (!accelerometerMapper.isCalibrated())
-	{
-		arduinoStatusMessage = "Calibration incomplete; hold still or press G";
-		return;
-	}
-	if (pathEditor.getState() == EditorState::Recording)
-		return;
-
-	accelerometerMapper.setCursorPosition(car->position);
-	const Vector3& cursor = accelerometerMapper.getCursorPosition();
-	lastArduinoRecordTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-	lastArduinoRecordedPosition = cursor;
-	pathEditor.setInputMethod("arduino-tilt");
-	pathEditor.beginStroke(cursor, lastArduinoRecordTime);
-	arduinoRecording = pathEditor.getState() == EditorState::Recording;
-	arduinoStatusMessage = arduinoRecording ? "Recording tilt-controlled path" : "Editor cannot start recording now";
+	if (ArduinoInputController* ac = getArduinoController())
+		ac->startRecording(pathEditor, glutGet(GLUT_ELAPSED_TIME) / 1000.0);
 }
 
 void GameManager::stopArduinoRecording()
 {
-	if (arduinoRecording)
-		pathEditor.endStroke();
-	arduinoRecording = false;
+	if (ArduinoInputController* ac = getArduinoController())
+		ac->stopRecording(pathEditor);
 }
 
 void GameManager::resetArduinoCursor()
 {
-	accelerometerMapper.setCursorPosition(car->position);
-	if (pathVisualizer && arduinoSerial.isConnected() && accelerometerMapper.isCalibrated())
-		pathVisualizer->setCursorPosition(accelerometerMapper.getCursorPosition());
+	if (ArduinoInputController* ac = getArduinoController())
+		ac->resetCursor(car ? car->position : Vector3(150.0f, 0.0f, 0.0f));
 }
 
-void GameManager::updateArduinoInput(float deltaTime)
+bool GameManager::isArduinoRecording() const
 {
-	if (!arduinoSerial.isConnected())
-	{
-		arduinoButtonWasPressed = false;
-		if (arduinoRecording)
-		{
-			stopArduinoRecording();
-			arduinoStatusMessage = "Serial disconnected; recording stopped safely";
-		}
-		return;
-	}
+	if (const ArduinoInputController* ac = const_cast<GameManager*>(this)->getArduinoController())
+		return ac->isRecording();
+	return false;
+}
 
-	std::vector<AccelerometerSample> samples;
-	arduinoSerial.poll(samples);
-	for (const AccelerometerSample& sample : samples)
+ArduinoInputController* GameManager::getArduinoController()
+{
+	for (auto& ctrl : m_inputControllers)
 	{
-		accelerometerMapper.consumeSample(sample);
-		if (sample.buttonPressed && !arduinoButtonWasPressed)
-			++pendingArduinoButtonPresses;
-		arduinoButtonWasPressed = sample.buttonPressed;
+		if (ctrl->getMode() == PathInputMode::Arduino)
+			return static_cast<ArduinoInputController*>(ctrl.get());
 	}
-	if (!arduinoSerial.isConnected())
-	{
-		if (arduinoRecording)
-			stopArduinoRecording();
-		arduinoStatusMessage = arduinoSerial.getStatusMessage();
-		return;
-	}
+	return nullptr;
+}
 
-	const int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
-	const int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
-	if (windowHeight > 0)
+PS4GyroInputController* GameManager::getPS4Controller()
+{
+	for (auto& ctrl : m_inputControllers)
 	{
-		const float halfWidth = 200.0f * static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
-		accelerometerMapper.setBounds(150.0f - halfWidth, 150.0f + halfWidth, -200.0f, 200.0f);
+		if (ctrl->getMode() == PathInputMode::PS4Gyro)
+			return static_cast<PS4GyroInputController*>(ctrl.get());
 	}
-	if (accelerometerMapper.isCalibrated())
-	{
-		accelerometerMapper.update(deltaTime);
-		if (pathVisualizer && isEditingPath())
-			pathVisualizer->setCursorPosition(accelerometerMapper.getCursorPosition());
-	}
-
-	if (arduinoRecording)
-	{
-		if (!arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)))
-		{
-			stopArduinoRecording();
-			arduinoStatusMessage = "Sensor data stale; recording stopped safely";
-			return;
-		}
-		if (pathEditor.getState() == EditorState::Recording)
-		{
-			const double now = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-			const Vector3& cursor = accelerometerMapper.getCursorPosition();
-			const float moved = Distance(lastArduinoRecordedPosition, cursor);
-			if (moved >= 0.8f || (now - lastArduinoRecordTime >= 0.05 && moved > 0.05f))
-			{
-				pathEditor.addSample(cursor, now);
-				lastArduinoRecordedPosition = cursor;
-				lastArduinoRecordTime = now;
-			}
-			if (pathEditor.getRawSamples().size() >= 10000)
-			{
-				stopArduinoRecording();
-				arduinoStatusMessage = "Sample limit reached; recording stopped";
-			}
-		}
-	}
-
-	if (accelerometerMapper.isCalibrated() && arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)) && !arduinoRecording)
-		arduinoStatusMessage = "Calibrated; B starts at car, O returns to car";
-	else if (!accelerometerMapper.isCalibrated())
-		arduinoStatusMessage = "Calibrating neutral " + std::to_string(accelerometerMapper.getCalibrationSamplesCollected()) + "/" +
-			std::to_string(accelerometerMapper.getCalibrationSamplesRequired());
-	else if (!arduinoSerial.hasRecentSample(std::chrono::milliseconds(1000)) && !arduinoRecording)
-		arduinoStatusMessage = "Connected; waiting for fresh accelerometer data";
+	return nullptr;
 }
