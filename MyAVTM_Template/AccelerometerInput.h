@@ -23,10 +23,10 @@ public:
 struct AccelerometerMapperConfig
 {
 	std::size_t calibrationSamples = 30;
-	float filterAlpha = 0.25f;
-	float deadZone = 0.04f;
+	float filterAlpha = 0.15f;
+	float deadZone = 0.08f;
 	float fullScaleTilt = 0.35f;
-	float sensitivity = 140.0f;
+	float sensitivity = 90.0f;
 	float maximumSpeed = 120.0f;
 	bool invertX = true;
 	bool invertY = false;

@@ -38,6 +38,10 @@ bool testProtocolParsing()
 
 bool testCalibrationFilteringAndBounds()
 {
+	assert(near(AccelerometerMapperConfig().filterAlpha, 0.15f));
+	assert(near(AccelerometerMapperConfig().deadZone, 0.08f));
+	assert(near(AccelerometerMapperConfig().sensitivity, 90.0f));
+
 	AccelerometerMapperConfig config;
 	config.calibrationSamples = 3;
 	config.filterAlpha = 1.0f;
@@ -54,6 +58,12 @@ bool testCalibrationFilteringAndBounds()
 	assert(mapper.getCalibrationSamplesCollected() == 3);
 
 	mapper.consumeSample({ 60, 0.12f, 0.22f, 0.95f });
+	mapper.update(0.1f);
+	assert(near(mapper.getCursorPosition().x, 150.0f));
+	assert(near(mapper.getCursorPosition().z, 0.0f));
+
+	mapper.setCursorPosition(Vector3(150.0f, 0.0f, 0.0f));
+	mapper.consumeSample({ 70, 0.1f, 0.27f, 0.95f });
 	mapper.update(0.1f);
 	assert(near(mapper.getCursorPosition().x, 150.0f));
 	assert(near(mapper.getCursorPosition().z, 0.0f));

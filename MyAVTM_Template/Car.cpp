@@ -137,11 +137,11 @@ void Car::setPosition(Vector3 position)
 
 void Car::OnCollision(const GameObject& other, const CollisionInfo& info)
 {
-	if (const Orange* orange = dynamic_cast<const Orange*>(&other))
+	/*if (const Orange* orange = dynamic_cast<const Orange*>(&other))
 	{
 		onOrangeCollision.invoke(1);
 		reset({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f });
-	}
+	}*/
 
 	if (const Checkpoint* checkpoint = dynamic_cast<const Checkpoint*>(&other))
 	{

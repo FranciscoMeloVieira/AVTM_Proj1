@@ -62,7 +62,7 @@ AccelerometerMapper::AccelerometerMapper(const AccelerometerMapperConfig& config
 	: m_config(config)
 {
 	m_config.calibrationSamples = std::max<std::size_t>(1, m_config.calibrationSamples);
-	m_config.filterAlpha = std::clamp(m_config.filterAlpha, 0.01f, 1.0f);
+	m_config.filterAlpha = std::clamp(std::isfinite(m_config.filterAlpha) ? m_config.filterAlpha : 0.15f, 0.01f, 1.0f);
 	m_config.deadZone = std::clamp(m_config.deadZone, 0.0f, 0.95f);
 	m_config.fullScaleTilt = std::max(m_config.fullScaleTilt, m_config.deadZone + 0.001f);
 	m_config.sensitivity = std::max(0.0f, m_config.sensitivity);
@@ -81,6 +81,9 @@ void AccelerometerMapper::beginCalibration()
 
 void AccelerometerMapper::consumeSample(const AccelerometerSample& sample)
 {
+	if (!std::isfinite(sample.x) || !std::isfinite(sample.y) || !std::isfinite(sample.z))
+		return;
+
 	if (!m_calibrated)
 	{
 		m_calibrationX += sample.x;
@@ -169,5 +172,6 @@ float AccelerometerMapper::applyDeadZone(float value) const
 		return 0.0f;
 	const float scaled = std::min((magnitude - m_config.deadZone) /
 		(m_config.fullScaleTilt - m_config.deadZone), 1.0f);
-	return std::copysign(scaled, value);
+	const float smoothScaled = scaled * scaled * (3.0f - 2.0f * scaled);
+	return std::copysign(smoothScaled, value);
 }

@@ -45,9 +45,9 @@ void GameManager::init()
 
 	//Add Objects to the collision system
 	collisionSystem->AddGameObject(car);
-	/*for (int i = 0; i < orangesManager->numOranges; i++) {
+	for (int i = 0; i < orangesManager->numOranges; i++) {
 		collisionSystem->AddGameObject(&orangesManager->oranges[i]);
-	}*/
+	}
 	for (int i = 0; i < cheeriosManager->cheerios.size(); i++) {
 		collisionSystem->AddGameObject(&cheeriosManager->cheerios[i]);
 	}
