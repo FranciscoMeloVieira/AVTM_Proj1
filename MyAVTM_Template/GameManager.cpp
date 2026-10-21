@@ -156,7 +156,7 @@ void GameManager::update(float deltaTime)
 				else if (m_activeInputMode == PathInputMode::Arduino)
 				{
 					hud->setConstantValue("2_Progress", isConn
-						? "D4/N: Finish & Follow | C: Clear | E: Exit"
+						? "D4: Finish & Follow | C: Clear | E: Exit"
 						: "N: Finish & Follow | C: Clear | E: Exit");
 					hud->setConstantValue("3_Speed", isConn
 						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | Tab/U: Switch" : "G: Calibrate | Tab/U: Switch")
@@ -193,10 +193,10 @@ void GameManager::update(float deltaTime)
 					else if (m_activeInputMode == PathInputMode::Arduino)
 					{
 						hud->setConstantValue("2_Progress", isConn
-							? "D4/Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit"
+							? "D4: Redraw | C: Clear | L: Loop | S: Smooth | E: Exit"
 							: "Enter/Space/N: Follow | C: Clear | L: Loop | S: Smooth | E: Exit");
 						hud->setConstantValue("3_Speed", isConn
-							? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor" : "B: Start | O: Reset cursor | Tab/U: Switch")
+							? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | Tab/U: Switch" : "G: Calibrate | Tab/U: Switch")
 							: "I: Connect Arduino | Tab/U: Switch Input");
 					}
 					else // Mouse
@@ -210,7 +210,7 @@ void GameManager::update(float deltaTime)
 					hud->setConstantValue("1_Path", "ERROR: " + pathEditor.getLastErrorMessage());
 					hud->setConstantValue("2_Progress", (m_activeInputMode == PathInputMode::PS4Gyro)
 						? "PS4 X: Redraw | C: Clear | E: Exit"
-						: ((m_activeInputMode == PathInputMode::Arduino) ? (isConn ? "D4/B: Start | C: Clear | E: Exit" : "C: Clear | E: Exit")
+						: ((m_activeInputMode == PathInputMode::Arduino) ? (isConn ? "D4: Redraw | C: Clear | E: Exit" : "C: Clear | E: Exit")
 						: "Drag mouse to draw | C: Clear | E: Exit"));
 					hud->setConstantValue("3_Speed", "Tab/U: Switch Input");
 				}
@@ -243,7 +243,7 @@ void GameManager::update(float deltaTime)
 				else if (m_activeInputMode == PathInputMode::Arduino)
 				{
 					hud->setConstantValue("3_Speed", isConn
-						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | B: Start | O: Reset cursor | D4: Start | E: Exit" : "B: Start | O: Reset cursor | D4: Start | E: Exit")
+						? (showPathEditorHudDetails ? "I: Disconnect | G: Calibrate | D4: Start Drawing | E: Exit" : "D4: Start Drawing | E: Exit")
 						: "I: Connect Arduino | Tab/U: Switch Input | E: Exit");
 				}
 				else // Mouse
@@ -281,7 +281,7 @@ void GameManager::update(float deltaTime)
 				? "MODE: WASD  [E: Edit Path | M: Engage AI | T: Path | V: Visuals]"
 				: "MODE: WASD  [E: Edit Path | M: Engage AI | V: Visuals]";
 			if (activeCtrl->isConnected() && m_activeInputMode != PathInputMode::Mouse)
-				modeText += (m_activeInputMode == PathInputMode::PS4Gyro) ? " | PS4 X: Edit path" : " | D4: Draw path";
+				modeText += (m_activeInputMode == PathInputMode::PS4Gyro) ? " | PS4 X: Edit path" : " | D4: Edit path";
 			hud->setConstantValue("0_Mode", modeText);
 			hud->removeConstantValue("1_Path");
 			hud->removeConstantValue("2_Progress");
@@ -293,7 +293,7 @@ void GameManager::update(float deltaTime)
 			hud->setConstantValue("0_Mode", (activeCtrl->isConnected() && m_activeInputMode != PathInputMode::Mouse)
 				? ((m_activeInputMode == PathInputMode::PS4Gyro)
 					? "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | PS4 X: Redraw path]"
-					: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | D4: New path]")
+					: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | D4: Redraw path]")
 				: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD]");
 			hud->setConstantValue("1_Path", "PATH: " + activePath.name +
 				(showPathEditorHudDetails ? "  [T: Switch Path]" : ""));

@@ -39,6 +39,9 @@ public:
 
 	void update(float deltaTimeSeconds, double currentTimestampSeconds, PathEditor& editor) override;
 
+	bool consumeEnterEditorRequested() override;
+	bool consumeConfirmRequested() override;
+
 	// Accessors for diagnostics / tests
 	SerialPort& getSerialPort() { return m_serial; }
 	const SerialPort& getSerialPort() const { return m_serial; }
@@ -52,6 +55,9 @@ private:
 	bool m_buttonWasPressed = false;
 	unsigned int m_pendingButtonPresses = 0;
 	std::string m_statusMessage = "Arduino disconnected";
+	bool m_enterEditorRequested = false;
+	bool m_confirmRequested = false;
+	Vector3 m_recordingStartPosition{ 150.0f, 0.0f, 0.0f };
 	Vector3 m_lastRecordedPosition{ 150.0f, 0.0f, 0.0f };
 	double m_lastRecordTime = 0.0;
 

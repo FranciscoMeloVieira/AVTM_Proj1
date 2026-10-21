@@ -64,6 +64,7 @@ void ArduinoInputController::beginCalibration()
 
 void ArduinoInputController::resetCursor(const Vector3& referencePosition)
 {
+	m_recordingStartPosition = referencePosition;
 	m_mapper.setCursorPosition(referencePosition);
 }
 
@@ -119,9 +120,16 @@ void ArduinoInputController::handleButtonPress(PathEditor& editor, double timest
 	if (state == EditorState::Recording)
 	{
 		stopRecording(editor);
+		if (editor.getProcessedPath().valid)
+			m_confirmRequested = true;
+	}
+	else if (state == EditorState::Idle)
+	{
+		m_enterEditorRequested = true;
 	}
 	else if (state == EditorState::Editing || state == EditorState::Preview)
 	{
+		resetCursor(m_recordingStartPosition);
 		startRecording(editor, timestampSeconds);
 	}
 }
@@ -200,10 +208,24 @@ void ArduinoInputController::update(float deltaTimeSeconds, double currentTimest
 	}
 
 	if (m_mapper.isCalibrated() && m_serial.hasRecentSample(std::chrono::milliseconds(1000)) && !m_recording)
-		m_statusMessage = "Calibrated; B starts at car, O returns to car";
+		m_statusMessage = "Calibrated; D4 enters or redraws path";
 	else if (!m_mapper.isCalibrated())
 		m_statusMessage = "Calibrating neutral " + std::to_string(m_mapper.getCalibrationSamplesCollected()) + "/" +
 			std::to_string(m_mapper.getCalibrationSamplesRequired());
 	else if (!m_serial.hasRecentSample(std::chrono::milliseconds(1000)) && !m_recording)
 		m_statusMessage = "Connected; waiting for fresh accelerometer data";
+}
+
+bool ArduinoInputController::consumeEnterEditorRequested()
+{
+	const bool requested = m_enterEditorRequested;
+	m_enterEditorRequested = false;
+	return requested;
+}
+
+bool ArduinoInputController::consumeConfirmRequested()
+{
+	const bool requested = m_confirmRequested;
+	m_confirmRequested = false;
+	return requested;
 }
