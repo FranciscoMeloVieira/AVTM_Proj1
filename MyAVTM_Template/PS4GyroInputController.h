@@ -39,6 +39,7 @@ public:
 	void update(float deltaTimeSeconds, double currentTimestampSeconds, PathEditor& editor) override;
 
 	// Hardware button action queries
+	bool consumeEnterEditorRequested() override;
 	bool consumeConfirmRequested() override;
 	bool consumeClearRequested() override;
 	bool consumeRecalibrateRequested() override;
@@ -57,22 +58,16 @@ private:
 	bool m_recording = false;
 	std::string m_statusMessage = "PS4 controller disconnected";
 
+	Vector3 m_recordingStartPosition{ 150.0f, 0.0f, 0.0f };
 	Vector3 m_lastRecordedPosition{ 150.0f, 0.0f, 0.0f };
 	double m_lastRecordTime = 0.0;
 
 	// Button edge tracking
 	bool m_lastButtonCross = false;
-	bool m_lastButtonCircle = false;
-	bool m_lastButtonSquare = false;
-	bool m_lastButtonTriangle = false;
-	bool m_lastButtonOptions = false;
-	bool m_lastButtonShare = false;
 
 	// Action requests triggered by controller buttons
+	bool m_enterEditorRequested = false;
 	bool m_confirmRequested = false;
-	bool m_clearRequested = false;
-	bool m_recalibrateRequested = false;
-	bool m_resetCursorRequested = false;
 
 	void handleButtonEdges(const PS4ControllerSample& sample, PathEditor& editor, double timestampSeconds);
 };

@@ -61,6 +61,7 @@ public:
 		double timestampSeconds, PathEditor& editor) {}
 
 	// Hardware button action triggers (e.g. PS4 face buttons)
+	virtual bool consumeEnterEditorRequested() { return false; }
 	virtual bool consumeConfirmRequested() { return false; }
 	virtual bool consumeClearRequested() { return false; }
 	virtual bool consumeRecalibrateRequested() { return false; }

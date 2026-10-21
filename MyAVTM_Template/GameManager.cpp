@@ -107,6 +107,16 @@ void GameManager::update(float deltaTime)
 		IPathInputController* activeCtrl = getActiveInputController();
 		activeCtrl->update(deltaTime, now, pathEditor);
 
+		if (activeCtrl->consumeEnterEditorRequested())
+		{
+			const bool wasFollowingPath = controlMode == ControlMode::PathFollowing;
+			enterPathEditor();
+			if (wasFollowingPath)
+			{
+				clearEditorPath();
+				startActiveInputRecording();
+			}
+		}
 		if (activeCtrl->consumeConfirmRequested())
 			confirmEditorPath();
 		if (activeCtrl->consumeClearRequested())
@@ -140,8 +150,8 @@ void GameManager::update(float deltaTime)
 
 				if (m_activeInputMode == PathInputMode::PS4Gyro)
 				{
-					hud->setConstantValue("2_Progress", "PS4 X: Stop | Circle/N: Follow | Square/C: Clear | E: Exit");
-					hud->setConstantValue("3_Speed", "Options: Calibrate | Tab/U: Switch Input");
+					hud->setConstantValue("2_Progress", "PS4 X: Finish & Follow | C: Clear | E: Exit");
+					hud->setConstantValue("3_Speed", "G: Calibrate | Tab/U: Switch Input");
 				}
 				else if (m_activeInputMode == PathInputMode::Arduino)
 				{
@@ -176,8 +186,8 @@ void GameManager::update(float deltaTime)
 
 					if (m_activeInputMode == PathInputMode::PS4Gyro)
 					{
-						hud->setConstantValue("2_Progress", "Circle/Enter/Space: Follow | Square/C: Clear | L: Loop | S: Smooth | E: Exit");
-						hud->setConstantValue("3_Speed", isConn ? "PS4 X/B: Start | Triangle/O: Reset cursor | Options/G: Calibrate | Tab/U: Switch"
+						hud->setConstantValue("2_Progress", "PS4 X: Redraw | C: Clear | L: Loop | S: Smooth | E: Exit");
+						hud->setConstantValue("3_Speed", isConn ? "G: Calibrate | Tab/U: Switch"
 																: "I: Connect PS4 Controller | Tab/U: Switch Input");
 					}
 					else if (m_activeInputMode == PathInputMode::Arduino)
@@ -199,7 +209,7 @@ void GameManager::update(float deltaTime)
 				{
 					hud->setConstantValue("1_Path", "ERROR: " + pathEditor.getLastErrorMessage());
 					hud->setConstantValue("2_Progress", (m_activeInputMode == PathInputMode::PS4Gyro)
-						? "PS4 X/B: Start | Square/C: Clear | E: Exit"
+						? "PS4 X: Redraw | C: Clear | E: Exit"
 						: ((m_activeInputMode == PathInputMode::Arduino) ? (isConn ? "D4/B: Start | C: Clear | E: Exit" : "C: Clear | E: Exit")
 						: "Drag mouse to draw | C: Clear | E: Exit"));
 					hud->setConstantValue("3_Speed", "Tab/U: Switch Input");
@@ -227,7 +237,7 @@ void GameManager::update(float deltaTime)
 
 				if (m_activeInputMode == PathInputMode::PS4Gyro)
 				{
-					hud->setConstantValue("3_Speed", isConn ? "PS4 X/B: Start | Triangle/O: Reset cursor | Options/G: Calibrate | I: Disconnect"
+					hud->setConstantValue("3_Speed", isConn ? "PS4 X: Start Drawing | G: Calibrate | I: Disconnect"
 															: "I: Connect PS4 Controller | E: Exit | Tab/U: Switch");
 				}
 				else if (m_activeInputMode == PathInputMode::Arduino)
@@ -271,7 +281,7 @@ void GameManager::update(float deltaTime)
 				? "MODE: WASD  [E: Edit Path | M: Engage AI | T: Path | V: Visuals]"
 				: "MODE: WASD  [E: Edit Path | M: Engage AI | V: Visuals]";
 			if (activeCtrl->isConnected() && m_activeInputMode != PathInputMode::Mouse)
-				modeText += (m_activeInputMode == PathInputMode::PS4Gyro) ? " | PS4 X: Draw path" : " | D4: Draw path";
+				modeText += (m_activeInputMode == PathInputMode::PS4Gyro) ? " | PS4 X: Edit path" : " | D4: Draw path";
 			hud->setConstantValue("0_Mode", modeText);
 			hud->removeConstantValue("1_Path");
 			hud->removeConstantValue("2_Progress");
@@ -282,7 +292,7 @@ void GameManager::update(float deltaTime)
 		{
 			hud->setConstantValue("0_Mode", (activeCtrl->isConnected() && m_activeInputMode != PathInputMode::Mouse)
 				? ((m_activeInputMode == PathInputMode::PS4Gyro)
-					? "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | PS4 X: New path]"
+					? "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | PS4 X: Redraw path]"
 					: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD | D4: New path]")
 				: "MODE: AI PATH FOLLOWER  [E: Edit Path | M: WASD]");
 			hud->setConstantValue("1_Path", "PATH: " + activePath.name +

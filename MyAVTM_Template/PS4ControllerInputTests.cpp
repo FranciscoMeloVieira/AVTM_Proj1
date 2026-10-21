@@ -322,7 +322,7 @@ bool testGyroMapperSustainedTiltMotion()
 	return true;
 }
 
-bool testPS4XButtonRecordingAndActionButtons()
+bool testPS4XButtonEditorCycleAndAutoFollow()
 {
 	PS4GyroMapperConfig config;
 	config.calibrationSamples = 2;
@@ -330,7 +330,6 @@ bool testPS4XButtonRecordingAndActionButtons()
 
 	PS4GyroInputController controller(config);
 	PathEditor editor;
-	editor.enterEditMode();
 
 	// Inject 2 neutral calibration samples
 	PS4ControllerSample calSample;
@@ -341,51 +340,70 @@ bool testPS4XButtonRecordingAndActionButtons()
 	controller.update(0.016f, 1.0, editor);
 	assert(controller.isCalibrated());
 
-	// First press of X button: should start recording stroke in PathEditor
+	// First press of X enters path editing.
 	PS4ControllerSample pressX = calSample;
 	pressX.buttonCross = true;
 	controller.getController().injectSample(pressX);
 	controller.update(0.016f, 1.1, editor);
+	assert(controller.consumeEnterEditorRequested());
+	assert(!controller.isRecording());
+	assert(editor.getState() == EditorState::Idle);
+	editor.enterEditMode();
+	const Vector3 carPosition(40.0f, 0.0f, 60.0f);
+	controller.resetCursor(carPosition);
+
+	// The cursor can move while editing, but the next stroke starts at the car.
+	PS4ControllerSample releaseX = calSample;
+	controller.getController().injectSample(releaseX);
+	controller.update(0.016f, 1.15, editor);
+	controller.setCursorPosition(Vector3(170.0f, 0.0f, 30.0f));
+	controller.getController().injectSample(pressX);
+	controller.update(0.016f, 1.2, editor);
 
 	assert(controller.isRecording());
 	assert(editor.getState() == EditorState::Recording);
 	assert(editor.getStats().inputMethod == "ps4-gyro");
+	assert(approxEqual(editor.getRawSamples().front().position.x, carPosition.x));
+	assert(approxEqual(editor.getRawSamples().front().position.z, carPosition.z));
 
-	// Release X button: continues recording
-	PS4ControllerSample releaseX = calSample;
-	releaseX.buttonCross = false;
+	// Add enough movement for the stroke processor to accept the path.
+	editor.addSample(Vector3(160.0f, 0.0f, 20.0f), 1.25);
+	editor.addSample(Vector3(180.0f, 0.0f, 40.0f), 1.27);
+
+	// Releasing X continues recording.
 	controller.getController().injectSample(releaseX);
-	controller.update(0.016f, 1.2, editor);
+	controller.update(0.016f, 1.28, editor);
 	assert(controller.isRecording());
 	assert(editor.getState() == EditorState::Recording);
 
-	// Second press of X button: should stop recording stroke and transition to Preview
-	pressX.buttonCross = true;
+	// Pressing X again finishes the path and requests automatic following.
 	controller.getController().injectSample(pressX);
 	controller.update(0.016f, 1.3, editor);
 
 	assert(!controller.isRecording());
 	assert(editor.getState() == EditorState::Preview);
+	assert(editor.getProcessedPath().valid);
+	assert(controller.consumeConfirmRequested());
+	assert(!controller.consumeConfirmRequested());
 
-	// Test action buttons: Circle (Confirm), Square (Clear), Triangle (Reset Cursor)
+	// Other face buttons do not trigger path workflow actions.
 	PS4ControllerSample circlePress = calSample;
 	circlePress.buttonCircle = true;
 	controller.getController().injectSample(circlePress);
 	controller.update(0.016f, 1.4, editor);
-	assert(controller.consumeConfirmRequested());
-	assert(!controller.consumeConfirmRequested()); // Cleared once consumed
+	assert(!controller.consumeConfirmRequested());
 
 	PS4ControllerSample squarePress = calSample;
 	squarePress.buttonSquare = true;
 	controller.getController().injectSample(squarePress);
 	controller.update(0.016f, 1.5, editor);
-	assert(controller.consumeClearRequested());
+	assert(!controller.consumeClearRequested());
 
 	PS4ControllerSample trianglePress = calSample;
 	trianglePress.buttonTriangle = true;
 	controller.getController().injectSample(trianglePress);
 	controller.update(0.016f, 1.6, editor);
-	assert(controller.consumeResetCursorRequested());
+	assert(!controller.consumeResetCursorRequested());
 
 	return true;
 }
@@ -487,8 +505,8 @@ bool RunPS4ControllerInputTests()
 	assert(testGyroMapperSustainedTiltMotion());
 	std::cout << "[PASS] Sustained cursor motion while tilted and stopping at neutral" << std::endl;
 
-	assert(testPS4XButtonRecordingAndActionButtons());
-	std::cout << "[PASS] PS4 X button start/stop recording and action buttons (Confirm/Clear/Reset)" << std::endl;
+	assert(testPS4XButtonEditorCycleAndAutoFollow());
+	std::cout << "[PASS] PS4 X editor cycle and automatic follow request" << std::endl;
 
 	assert(testDisconnectHandlingDuringRecording());
 	std::cout << "[PASS] Robust disconnect handling and recording safety" << std::endl;

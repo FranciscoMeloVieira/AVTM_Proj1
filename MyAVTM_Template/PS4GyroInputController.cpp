@@ -25,11 +25,6 @@ void PS4GyroInputController::disconnect()
 	m_controller.close();
 	m_recording = false;
 	m_lastButtonCross = false;
-	m_lastButtonCircle = false;
-	m_lastButtonSquare = false;
-	m_lastButtonTriangle = false;
-	m_lastButtonOptions = false;
-	m_lastButtonShare = false;
 	m_statusMessage = "PS4 controller disconnected";
 }
 
@@ -49,6 +44,7 @@ void PS4GyroInputController::beginCalibration()
 
 void PS4GyroInputController::resetCursor(const Vector3& referencePosition)
 {
+	m_recordingStartPosition = referencePosition;
 	m_mapper.setCursorPosition(referencePosition);
 }
 
@@ -100,50 +96,28 @@ void PS4GyroInputController::toggleRecording(PathEditor& editor, double timestam
 
 void PS4GyroInputController::handleButtonEdges(const PS4ControllerSample& sample, PathEditor& editor, double timestampSeconds)
 {
-	// PS4 X button (Cross): Start / Stop recording (replaces Arduino D4 / keyboard B)
+	// X advances through editor entry, recording, and following a valid completed path.
 	if (sample.buttonCross && !m_lastButtonCross)
 	{
 		const EditorState state = editor.getState();
-		if (state == EditorState::Recording)
+		if (state == EditorState::Idle)
+		{
+			m_enterEditorRequested = true;
+		}
+		else if (state == EditorState::Recording)
 		{
 			stopRecording(editor);
+			if (editor.getProcessedPath().valid)
+				m_confirmRequested = true;
 		}
 		else if (state == EditorState::Editing || state == EditorState::Preview)
 		{
+			resetCursor(m_recordingStartPosition);
 			startRecording(editor, timestampSeconds);
 		}
 	}
 
-	// Circle button: Confirm path (equivalent to Enter / Space / N)
-	if (sample.buttonCircle && !m_lastButtonCircle)
-	{
-		m_confirmRequested = true;
-	}
-
-	// Square button: Clear path (equivalent to C)
-	if (sample.buttonSquare && !m_lastButtonSquare)
-	{
-		m_clearRequested = true;
-	}
-
-	// Triangle button: Reset cursor (equivalent to O)
-	if (sample.buttonTriangle && !m_lastButtonTriangle)
-	{
-		m_resetCursorRequested = true;
-	}
-
-	// Options / Share buttons: Recalibrate (equivalent to G)
-	if ((sample.buttonOptions && !m_lastButtonOptions) || (sample.buttonShare && !m_lastButtonShare))
-	{
-		beginCalibration();
-	}
-
 	m_lastButtonCross = sample.buttonCross;
-	m_lastButtonCircle = sample.buttonCircle;
-	m_lastButtonSquare = sample.buttonSquare;
-	m_lastButtonTriangle = sample.buttonTriangle;
-	m_lastButtonOptions = sample.buttonOptions;
-	m_lastButtonShare = sample.buttonShare;
 }
 
 void PS4GyroInputController::update(float deltaTimeSeconds, double currentTimestampSeconds, PathEditor& editor)
@@ -152,11 +126,6 @@ void PS4GyroInputController::update(float deltaTimeSeconds, double currentTimest
 	if (!m_controller.isConnected())
 	{
 		m_lastButtonCross = false;
-		m_lastButtonCircle = false;
-		m_lastButtonSquare = false;
-		m_lastButtonTriangle = false;
-		m_lastButtonOptions = false;
-		m_lastButtonShare = false;
 
 		if (m_recording)
 		{
@@ -220,12 +189,19 @@ void PS4GyroInputController::update(float deltaTimeSeconds, double currentTimest
 	}
 
 	if (m_mapper.isCalibrated() && m_controller.hasRecentSample(std::chrono::milliseconds(1000)) && !m_recording)
-		m_statusMessage = "Calibrated; X starts at car, Triangle returns to car";
+		m_statusMessage = "Calibrated; press X to edit path";
 	else if (!m_mapper.isCalibrated())
 		m_statusMessage = "Calibrating neutral " + std::to_string(m_mapper.getCalibrationSamplesCollected()) + "/" +
 			std::to_string(m_mapper.getCalibrationSamplesRequired());
 	else if (!m_controller.hasRecentSample(std::chrono::milliseconds(1000)) && !m_recording)
 		m_statusMessage = "Connected; waiting for fresh PS4 gyro data";
+}
+
+bool PS4GyroInputController::consumeEnterEditorRequested()
+{
+	const bool requested = m_enterEditorRequested;
+	m_enterEditorRequested = false;
+	return requested;
 }
 
 bool PS4GyroInputController::consumeConfirmRequested()
@@ -237,21 +213,15 @@ bool PS4GyroInputController::consumeConfirmRequested()
 
 bool PS4GyroInputController::consumeClearRequested()
 {
-	const bool req = m_clearRequested;
-	m_clearRequested = false;
-	return req;
+	return false;
 }
 
 bool PS4GyroInputController::consumeRecalibrateRequested()
 {
-	const bool req = m_recalibrateRequested;
-	m_recalibrateRequested = false;
-	return req;
+	return false;
 }
 
 bool PS4GyroInputController::consumeResetCursorRequested()
 {
-	const bool req = m_resetCursorRequested;
-	m_resetCursorRequested = false;
-	return req;
+	return false;
 }
